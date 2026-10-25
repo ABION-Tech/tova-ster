@@ -977,7 +977,7 @@ fieldset.bday legend { font-size: 14px; font-weight: 600; padding: 0; margin-bot
 <script>
 (() => {
 /* ───────────────────────── Catalogue (sample prices, confirm before launch) ───────────────────────── */
-const IMG = { iron: ["assets/iron-vitamin-c.jpg", "assets/hero-iron-vitamin-c.jpg"], collagen: ["assets/collagen.jpg", "assets/hero-collagen.jpg"], kids: ["assets/kids-multivitamin.jpg", "assets/hero-kids-multivitamin.jpg"], creatine: ["assets/creatine.jpg", "assets/hero-creatine.jpg"] };
+const IMG = { iron: ["assets/iron-vitamin-c.jpg", "assets/hero-iron-vitamin-c.jpg"], collagen: ["assets/collagen.jpg", "assets/hero-collagen.jpg"], kids: ["assets/kids-multivitamin.jpg", "assets/hero-kids-multivitamin.jpg"], creatine: ["assets/creatine.jpg", "assets/hero-creatine.jpg"], d3: ["assets/vitamin-d3.jpg"] };
 const NEEDS = [
   { id: "immunity", name: "Immunity", note: "Vitamin D3, vitamin C, zinc", color: "var(--f-d3)", ink: "#1A1406", hero: "d3" },
   { id: "energy", name: "Energy & tiredness", note: "Iron with vitamin C", color: "var(--f-iron)", ink: "#fff", hero: "iron" },
@@ -1123,6 +1123,7 @@ S.cmeta = S.cmeta || {};
 if (!S.settings.birthday) S.settings.birthday = { on: true, points: 200 };
 if (!S.settings.alerts) S.settings.alerts = { on: true };
 // Hero timing went from 6 s to 3.9 s per slide (25 Oct); move saved demos across once.
+if (!S.d3Photo && S.products) { const d = S.products.find(p => p.id === "d3"); if (d && !(d.images || []).length) d.images = [...IMG.d3]; S.d3Photo = true; }
 if (!S.heroTiming3 && S.site && S.site.hero) { if ([5, 6].includes(+S.site.hero.intervalSec)) S.site.hero.intervalSec = 3.9; S.heroTiming3 = true; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { return false; } }
 

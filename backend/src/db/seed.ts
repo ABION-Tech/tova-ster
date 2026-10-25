@@ -103,7 +103,7 @@ const PRODUCTS: SeedProduct[] = [
     benefits: ["Vitamin D contributes to the normal function of the immune system", "Vitamin D contributes to the maintenance of normal bones and normal muscle function", "One small tablet a day"],
     how: "Adults: take one tablet a day with food. Do not exceed the stated dose. Not suitable for children.",
     ingredients: "Vitamin D3 (cholecalciferol) 100 µg (4000 IU). Full ingredient list to be confirmed from the label.",
-    facts: [["Vitamin D3", "100 µg (4000 IU)"]], warnings: STD_WARNING, images: [],
+    facts: [["Vitamin D3", "100 µg (4000 IU)"]], warnings: STD_WARNING, images: ["/brand/vitamin-d3.jpg"],
   },
 ];
 
@@ -146,6 +146,16 @@ async function seedProducts(categoryIds: Map<string, string>): Promise<Map<strin
       await pool.query(`DELETE FROM product_images WHERE product_id = $1`, [id]);
       for (const [i, url] of p.images.entries()) {
         await pool.query(`INSERT INTO product_images (product_id, url, alt_text, sort_order, is_primary) VALUES ($1,$2,$3,$4,$5)`, [id, url, `Tova-Ster ${p.name}`, i, i === 0]);
+      }
+    }
+    // A photo added to this file later reaches products that have none yet,
+    // without touching photos the team has uploaded in the admin.
+    if (id && !REFRESH && p.images.length) {
+      const has = await pool.query(`SELECT 1 FROM product_images WHERE product_id = $1 LIMIT 1`, [id]);
+      if (!has.rowCount) {
+        for (const [i, url] of p.images.entries()) {
+          await pool.query(`INSERT INTO product_images (product_id, url, alt_text, sort_order, is_primary) VALUES ($1,$2,$3,$4,$5)`, [id, url, `Tova-Ster ${p.name}`, i, i === 0]);
+        }
       }
     }
     if (!id) {
