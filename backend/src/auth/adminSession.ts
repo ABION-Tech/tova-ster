@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { secureCookies } from "./cookieMode.js";
 import { pool } from "../db/pool.js";
 import { generateToken, hashToken } from "./tokens.js";
 
@@ -18,7 +19,7 @@ export interface AdminAuthUser {
 }
 
 function adminCookieOptions(maxAgeMs: number) {
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = secureCookies;
   return {
     httpOnly: true,
     secure: isProd,

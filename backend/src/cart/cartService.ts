@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { secureCookies } from "../auth/cookieMode.js";
 import { randomBytes } from "node:crypto";
 import { pool } from "../db/pool.js";
 import type { AuthUser } from "../auth/session.js";
@@ -8,7 +9,7 @@ export const GUEST_CART_COOKIE = "guest_cart_token";
 const GUEST_CART_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days — long enough to survive "left and returned later"
 
 function guestCookieOptions() {
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = secureCookies;
   return {
     httpOnly: true,
     secure: isProd,

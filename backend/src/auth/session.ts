@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { secureCookies } from "./cookieMode.js";
 import { pool } from "../db/pool.js";
 import { generateToken, hashToken } from "./tokens.js";
 
@@ -20,7 +21,7 @@ export interface AuthUser {
 // it falls back to Lax there — this only ever branches on NODE_ENV, never
 // on anything request-supplied.
 function cookieOptions(maxAgeMs: number) {
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = secureCookies;
   return {
     httpOnly: true,
     secure: isProd,
