@@ -27,8 +27,10 @@ between unrelated domains (for example `*.vercel.app` and `*.up.railway.app`).
    `backend/scripts/backup/backup.sh` still works against Supabase for an off-site copy.
 
 ## 3. Railway (server)
-1. New project › Deploy from GitHub repo › set **Root Directory** to `backend`.
-   `backend/railway.json` sets the build, runs migrations before each deploy, starts the server and checks `/health`.
+1. New project › Deploy from GitHub repo › set **Root Directory** to `backend`. Service settings:
+   build `npm ci && npm run build`, start `npm start`, healthcheck `/health`, watch paths `/backend/**`,
+   pre-deploy `npm run migrate:prod && if [ "$SEED_ON_DEPLOY" = "true" ]; then node dist/db/seed.js; fi`
+   (set `SEED_ON_DEPLOY=true` for the first deploy only, then delete it).
 2. Variables (Service › Variables):
 
 | Variable | Value |
