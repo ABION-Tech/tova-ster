@@ -1,0 +1,4 @@
+Payment acceptance marks, shown only to tell customers which payment methods are accepted.
+visa, mastercard, amex, apple-pay, google-pay: "SVG Logos" by Gil Barbara (@iconify-json/logos), CC0-1.0.
+paypal: "payment-icons" (npm), MPL-2.0, file used unmodified.
+Trademarks belong to their owners (Visa, Mastercard, American Express, Apple, Google, PayPal).
