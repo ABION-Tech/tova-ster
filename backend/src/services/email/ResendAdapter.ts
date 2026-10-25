@@ -7,7 +7,8 @@ import type { EmailProviderAdapter, EmailPayload } from "./EmailService.js";
  * Required env vars (checked lazily on first send, not at startup — so a
  * missing key fails the specific email call, not the whole server boot):
  *   RESEND_API_KEY   — "re_…" key from the Resend dashboard
- *   EMAIL_FROM       — verified sender, e.g. "Wellness Co. <hello@wellnessco.ng>"
+ *   EMAIL_FROM       — verified sender, e.g. "Tova-Ster <orders@mail.tova-ster.com>"
+ *   EMAIL_REPLY_TO   — optional inbox for replies, e.g. info@tova-ster.com
  */
 export class ResendAdapter implements EmailProviderAdapter {
   private get apiKey(): string {
@@ -33,6 +34,8 @@ export class ResendAdapter implements EmailProviderAdapter {
       },
       body: JSON.stringify({
         from: this.fromAddress,
+        // Replies go to a real inbox (EMAIL_REPLY_TO), since mail is sent from a sending-only subdomain.
+        ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
         to: [payload.to],
         subject: payload.subject,
         html,
