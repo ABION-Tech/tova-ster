@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminJson, BACKEND_URL } from "../../../lib/backend";
+import { adminJson } from "../../../lib/backend";
 
 interface Media { src: string; kind: "image" | "video" }
 interface Slide { id: string; on: boolean; productSlug: string; kicker: string; title: string; text: string; ctaLabel: string; ctaHref: string; media: Media | null; tone: "light" | "dark"; bg: string }
@@ -22,7 +22,8 @@ export default function HomepageAdmin() {
 
   useEffect(() => {
     adminJson<{ settings: { site: Site } }>("/admin/settings").then((d) => setSite(d.settings.site)).catch((e) => setMsg(e.message));
-    fetch(`${BACKEND_URL}/catalogue`).then((r) => r.json()).then((d) => setProducts(d.products ?? [])).catch(() => {});
+    // All products, including sold-out ones (the public catalogue hides those, which would mislabel their slides).
+    adminJson<{ products: (Product & { status: string })[] }>("/admin/products").then((d) => setProducts(d.products.filter((p) => p.status !== "archived"))).catch(() => {});
   }, []);
 
   if (!site) return <p>{msg ?? "Loading…"}</p>;

@@ -28,12 +28,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-5)", background: "var(--surface-2)" }}>
-      <div className="card" style={{ width: "100%", maxWidth: 380, padding: "var(--space-6) var(--space-5)" }}>
-        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Tova-Ster</p>
-        <h1 className="display-3" style={{ marginBottom: "var(--space-5)" }}>Admin sign in</h1>
+    <main className="adminlogin">
+      <div className="card">
+        <div className="brandrow">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/monogram.png" alt="" /><b>Tova-Ster</b></div>
+        <h1>Admin sign in</h1>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+        <form onSubmit={handleSubmit}>
           <div>
             <label className="field-label" htmlFor="admin-email">Email</label>
             <input
@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
           <PasswordInput label="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
 
           {error && (
-            <p style={{ fontSize: 13, color: "var(--danger-text)", background: "var(--danger-bg)", padding: "10px 12px", borderRadius: "var(--radius-sm)" }}>
+            <p className="error">
               {error}
             </p>
           )}

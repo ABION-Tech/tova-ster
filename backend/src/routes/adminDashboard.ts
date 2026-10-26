@@ -82,12 +82,42 @@ export const adminDashboardRoutes: FastifyPluginAsync = async (app: FastifyInsta
         ),
       ]);
 
+    // At-a-glance figures on UK dates. Packers see the work, not the money.
+    const LDN = `(placed_at AT TIME ZONE 'Europe/London')::date`;
+    const TODAY = `(now() AT TIME ZONE 'Europe/London')::date`;
+    const PAIDS = `status IN ('PAID','PROCESSING','SHIPPED','DELIVERED')`;
+    const [glance, series] = await Promise.all([
+      pool.query<{ today: string; today_n: string; week: string; week_n: string; to_pack: string; new_customers: string; active_subs: string }>(
+        `SELECT
+           (SELECT coalesce(sum(total),0) FROM orders WHERE ${PAIDS} AND ${LDN} = ${TODAY}) AS today,
+           (SELECT count(*) FROM orders WHERE ${PAIDS} AND ${LDN} = ${TODAY}) AS today_n,
+           (SELECT coalesce(sum(total),0) FROM orders WHERE ${PAIDS} AND ${LDN} > ${TODAY} - 7) AS week,
+           (SELECT count(*) FROM orders WHERE ${PAIDS} AND ${LDN} > ${TODAY} - 7) AS week_n,
+           (SELECT count(*) FROM orders WHERE status IN ('PAID','PROCESSING')) AS to_pack,
+           (SELECT count(*) FROM users WHERE created_at > now() - interval '7 days') AS new_customers,
+           (SELECT count(*) FROM subscriptions WHERE status = 'active') AS active_subs`,
+      ),
+      pool.query<{ day: string; total: string; n: string }>(
+        `SELECT d::date::text AS day, coalesce(sum(o.total),0) AS total, count(o.id) AS n
+           FROM generate_series((now() AT TIME ZONE 'Europe/London')::date - 13, (now() AT TIME ZONE 'Europe/London')::date, '1 day') d
+           LEFT JOIN orders o ON (o.placed_at AT TIME ZONE 'Europe/London')::date = d::date AND o.${PAIDS}
+          GROUP BY d ORDER BY d`,
+      ),
+    ]);
+    const g = glance.rows[0];
+    const money = admin.role !== "Packer";
     const counts: Record<string, number> = {};
     for (const row of statusCounts.rows) counts[row.status] = Number(row.count);
 
     return reply.send({
+      glance: {
+        todaySales: money ? Number(g.today) : null, todayOrders: Number(g.today_n),
+        weekSales: money ? Number(g.week) : null, weekOrders: Number(g.week_n),
+        toPack: Number(g.to_pack), newCustomers: Number(g.new_customers), activeSubscriptions: Number(g.active_subs),
+      },
+      series: money ? series.rows.map((r) => ({ day: r.day, total: Number(r.total), orders: Number(r.n) })) : [],
       revenue: {
-        total: Number(revenue.rows[0].total_revenue),
+        total: money ? Number(revenue.rows[0].total_revenue) : 0,
         orderCount: Number(revenue.rows[0].order_count),
       },
       orderCounts: counts,
@@ -115,7 +145,7 @@ export const adminDashboardRoutes: FastifyPluginAsync = async (app: FastifyInsta
         id: r.id,
         orderNumber: r.order_number,
         status: r.status,
-        total: Number(r.total),
+        total: money ? Number(r.total) : null,
         placedAt: r.placed_at,
         customerEmail: r.customer_email,
       })),

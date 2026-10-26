@@ -59,7 +59,7 @@ export default function AdminReviewsPage() {
   }
 
   return (
-    <main>
+    <div>
       <h1 className="display-3" style={{ marginBottom: 20 }}>Reviews</h1>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
@@ -153,6 +153,6 @@ export default function AdminReviewsPage() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

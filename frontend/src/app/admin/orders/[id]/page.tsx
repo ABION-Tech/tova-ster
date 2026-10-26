@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { STATUS } from "../../../../lib/admin/status";
 import { adminJson } from "../../../../lib/backend";
 
 interface AdminOrderDetail {
@@ -54,15 +55,8 @@ interface AdminOrderDetail {
   allowedNextStatuses: string[];
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING_PAYMENT: "Pending payment",
-  PAID: "Paid",
-  PROCESSING: "Processing",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  REFUNDED: "Refunded",
-};
+const STATUS_LABELS: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, v[0]]));
+const ACTION: Record<string, string> = { PROCESSING: "Mark packed", SHIPPED: "Mark dispatched", DELIVERED: "Mark delivered", CANCELLED: "Cancel order", REFUNDED: "Mark refunded" };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
   initiated: "#8A5A17",
@@ -117,7 +111,7 @@ export default function AdminOrderDetailPage() {
   if (!order) return <p>Loading…</p>;
 
   return (
-    <main style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 900 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <Link href="/admin/orders" style={{ color: "var(--gold-deep)", fontSize: 13 }}>← Orders</Link>
         <h1 style={{ fontSize: 20 }}>{order.orderNumber}</h1>
@@ -227,7 +221,7 @@ export default function AdminOrderDetailPage() {
             Current: <b>{STATUS_LABELS[order.status] ?? order.status}</b>
           </p>
           {order.allowedNextStatuses.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>No further transitions available.</p>
+            <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>Nothing more to do on this order for your role.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {order.allowedNextStatuses.includes("SHIPPED") && (
@@ -242,10 +236,11 @@ export default function AdminOrderDetailPage() {
                 <button
                   key={s}
                   disabled={updatingStatus}
-                  onClick={() => handleStatusUpdate(s)}
-                  style={{ padding: "7px 14px", border: "1px solid var(--line-strong)", borderRadius: 4, cursor: "pointer", fontSize: 13, textAlign: "left", background: "var(--surface)" }}
+                  onClick={() => { if (["CANCELLED", "REFUNDED"].includes(s) && !confirm(`${ACTION[s]}? This can't be undone.`)) return; handleStatusUpdate(s); }}
+                  className={`btn sm${["CANCELLED", "REFUNDED"].includes(s) ? " ghost" : ""}`}
+                  style={{ justifyContent: "flex-start" }}
                 >
-                  Mark as {STATUS_LABELS[s] ?? s}
+                  {ACTION[s] ?? s}
                 </button>
               ))}
             </div>
@@ -261,7 +256,7 @@ export default function AdminOrderDetailPage() {
       <p style={{ marginTop: 16, fontSize: 12, color: "var(--ink-faint)" }}>
         Placed {new Date(order.placedAt).toLocaleString("en-GB")} · Order ID: {order.id}
       </p>
-    </main>
+    </div>
   );
 }
 

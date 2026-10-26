@@ -58,7 +58,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <main>
+    <div>
       <h1 className="display-3" style={{ marginBottom: 20 }}>Categories</h1>
 
       <form onSubmit={handleCreate} style={{ display: "flex", gap: 8, alignItems: "end", marginBottom: 24 }}>
@@ -116,7 +116,7 @@ export default function AdminCategoriesPage() {
           </tbody>
         </table>
       )}
-    </main>
+    </div>
   );
 }
 

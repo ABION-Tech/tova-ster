@@ -37,19 +37,19 @@ function AcceptInvite() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-5)", background: "var(--surface-2)" }}>
-      <div className="card" style={{ width: "100%", maxWidth: 400, padding: "var(--space-6) var(--space-5)" }}>
-        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Tova-Ster</p>
-        <h1 className="display-3" style={{ marginBottom: "var(--space-4)" }}>Choose your password</h1>
+    <main className="adminlogin">
+      <div className="card">
+        <div className="brandrow">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/monogram.png" alt="" /><b>Tova-Ster</b></div>
+        <h1>Choose your password</h1>
         {who && <p style={{ fontSize: 14, marginBottom: "var(--space-4)" }}>Welcome, {who.name}. You&apos;re joining the admin as <b>{who.role}</b> ({who.email}).</p>}
         {who && (
-          <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+          <form onSubmit={submit}>
             <PasswordInput label={`Password (at least ${MIN} characters)`} required value={pw} onChange={(e) => setPw(e.target.value)} />
             <PasswordInput label="Type it again" required value={pw2} onChange={(e) => setPw2(e.target.value)} />
             <Button type="submit" variant="primary" fullWidth disabled={busy}>{busy ? "Saving…" : "Save and sign in"}</Button>
           </form>
         )}
-        {error && <p style={{ fontSize: 13, color: "var(--danger-text)", background: "var(--danger-bg)", padding: "10px 12px", borderRadius: "var(--radius-sm)", marginTop: 12 }}>{error}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
     </main>
   );

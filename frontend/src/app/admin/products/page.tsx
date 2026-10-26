@@ -78,7 +78,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <main>
+    <div>
       <h1 className="display-3" style={{ marginBottom: 20 }}>Products</h1>
 
       {canEdit(admin?.role, "products") && <details style={{ marginBottom: 24 }}>
@@ -185,7 +185,7 @@ export default function AdminProductsPage() {
           </tbody>
         </table>
       )}
-    </main>
+    </div>
   );
 }
 

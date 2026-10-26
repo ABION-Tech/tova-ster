@@ -3,183 +3,114 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminJson } from "../../lib/backend";
+import { useAdmin } from "../../lib/admin/AdminContext";
+import { STATUS, gbp } from "../../lib/admin/status";
 
 interface DashboardData {
-  revenue: { total: number; orderCount: number };
+  glance: { todaySales: number | null; todayOrders: number; weekSales: number | null; weekOrders: number; toPack: number; newCustomers: number; activeSubscriptions: number };
+  series: { day: string; total: number; orders: number }[];
   orderCounts: Record<string, number>;
   lowStock: {
-    products: { id: string; name: string; slug: string; status: string; stock: number; threshold: number }[];
-    variants: { id: string; productId: string; productName: string; attributes: Record<string, string>; stock: number; threshold: number; status: string }[];
+    products: { id: string; name: string; stock: number; threshold: number }[];
+    variants: { id: string; productId: string; productName: string; attributes: Record<string, string>; stock: number; threshold: number }[];
   };
-  recentOrders: { id: string; orderNumber: string; status: string; total: number; placedAt: string; customerEmail: string | null }[];
+  recentOrders: { id: string; orderNumber: string; status: string; total: number | null; placedAt: string; customerEmail: string | null }[];
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING_PAYMENT: "Pending payment",
-  PAID: "Paid",
-  PROCESSING: "Processing",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  REFUNDED: "Refunded",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING_PAYMENT: "#8A5A17",
-  PAID: "var(--success-text)",
-  PROCESSING: "var(--gold-deep)",
-  SHIPPED: "var(--moss)",
-  DELIVERED: "var(--success-text)",
-  CANCELLED: "var(--danger-text)",
-  REFUNDED: "var(--ink-muted)",
-};
-
-function fmt(n: number) {
-  return `£${n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric" });
 
 export default function AdminDashboard() {
+  const { admin } = useAdmin();
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    adminJson<DashboardData>("/admin/dashboard")
-      .then(setData)
-      .catch((e: Error) => setError(e.message));
+    adminJson<DashboardData>("/admin/dashboard").then(setData).catch((e: Error) => setError(e.message));
   }, []);
 
-  if (error) return <p style={{ color: "var(--danger-text)" }}>Error: {error}</p>;
-  if (!data) return <p>Loading…</p>;
+  if (error) return <p className="note">Couldn&apos;t load the dashboard: {error}</p>;
+  if (!data) return <p className="muted">Loading…</p>;
 
-  const lowStockCount = data.lowStock.products.length + data.lowStock.variants.length;
+  const g = data.glance;
+  const low = [
+    ...data.lowStock.products.map((p) => ({ key: p.id, name: p.name, stock: p.stock, threshold: p.threshold, href: `/admin/products/${p.id}` })),
+    ...data.lowStock.variants.map((v) => ({ key: v.id, name: `${v.productName} (${Object.values(v.attributes).join(" / ")})`, stock: v.stock, threshold: v.threshold, href: `/admin/products/${v.productId}` })),
+  ];
+  const money = g.todaySales !== null;
+  const max = Math.max(1, ...data.series.map((d) => d.total));
+  const hello = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <main>
-      <h1 style={{ marginBottom: 24 }}>Dashboard</h1>
-
-      {/* ── Stat cards ──────────────────────────────────────────────────── */}
-      <div className="grid-4" style={{ marginBottom: 32 }}>
-        <StatCard label="Revenue (fulfilled)" value={fmt(data.revenue.total)} sub={`${data.revenue.orderCount} orders`} />
-        <StatCard label="Pending payment" value={String(data.orderCounts["PENDING_PAYMENT"] ?? 0)} />
-        <StatCard label="Processing / Shipped" value={String((data.orderCounts["PROCESSING"] ?? 0) + (data.orderCounts["SHIPPED"] ?? 0))} />
-        <StatCard label="Low-stock alerts" value={String(lowStockCount)} alert={lowStockCount > 0} />
+    <>
+      <div className="ahead">
+        <div>
+          <h1>{hello}, {admin?.name.split(" ")[0]}</h1>
+          <p>{g.toPack ? `${g.toPack} order${g.toPack === 1 ? "" : "s"} to pack.` : "Nothing waiting to be packed."} {low.length ? `${low.length} product${low.length === 1 ? " is" : "s are"} low on stock.` : ""}</p>
+        </div>
+        <Link href="/admin/orders" className="btn sm">Open orders</Link>
       </div>
 
-      <div className="two-col">
-        {/* ── Recent orders ──────────────────────────────────────────────── */}
-        <section>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h2 style={{ fontSize: 15 }}>Recent orders</h2>
-            <Link href="/admin/orders" style={{ fontSize: 13, color: "var(--gold-deep)" }}>View all →</Link>
+      <div className="kpis">
+        {money && <div className="kpi"><span>Sales today</span><b>{gbp(g.todaySales!)}</b><em className="muted">{g.todayOrders} order{g.todayOrders === 1 ? "" : "s"}</em></div>}
+        {money && <div className="kpi"><span>Last 7 days</span><b>{gbp(g.weekSales!)}</b><em className="muted">{g.weekOrders} orders</em></div>}
+        <div className="kpi"><span>To pack</span><b>{g.toPack}</b><em className={g.toPack ? "down" : "up"}>{g.toPack ? "Waiting" : "All clear"}</em></div>
+        <div className="kpi"><span>Low stock</span><b>{low.length}</b><em className={low.length ? "down" : "up"}>{low.length ? "Needs reordering" : "All above alert level"}</em></div>
+        {money && <div className="kpi"><span>New customers</span><b>{g.newCustomers}</b><em className="muted">last 7 days</em></div>}
+        {money && <div className="kpi"><span>Subscriptions</span><b>{g.activeSubscriptions}</b><em className="muted">active</em></div>}
+      </div>
+
+      <div className="acols">
+        {money ? (
+          <div className="acard">
+            <div><h2>Sales, last 14 days</h2><p className="sub">Paid orders, UK dates</p></div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${data.series.length}, 1fr)`, gap: 6, height: 180 }} role="img"
+              aria-label={`Sales per day: ${data.series.map((d) => `${dayLabel(d.day)} ${gbp(d.total)}`).join(", ")}`}>
+              {data.series.map((d) => (
+                <div key={d.day} title={`${dayLabel(d.day)}: ${gbp(d.total)}, ${d.orders} orders`} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", height: "100%" }}>
+                  <div style={{ height: `${Math.max(2, (d.total / max) * 100)}%`, background: d.total ? "var(--gold)" : "var(--surface-2)", borderRadius: "6px 6px 2px 2px" }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${data.series.length}, 1fr)`, gap: 6, fontSize: 11, color: "var(--ink-3)", textAlign: "center" }}>
+              {data.series.map((d, i) => <span key={d.day}>{i % 2 === data.series.length % 2 ? dayLabel(d.day).split(" ")[1] : ""}</span>)}
+            </div>
           </div>
-          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={th}>Order</th>
-                <th style={th}>Customer</th>
-                <th style={th}>Status</th>
-                <th style={th}>Total</th>
-              </tr>
-            </thead>
+        ) : (
+          <div className="acard"><h2>Your work</h2><p className="sub">Open Orders to pack and dispatch. Stock levels are on each product.</p></div>
+        )}
+
+        <div className="acard">
+          <div><h2>Low stock</h2><p className="sub">At or below the alert level</p></div>
+          {low.length === 0 ? <p className="muted">All products are above their alert level.</p> : (
+            <div className="tbl-wrap"><table className="t"><tbody>
+              {low.map((l) => (
+                <tr key={l.key}><td><Link href={l.href}>{l.name}</Link></td><td className="r"><span className="pill low">{l.stock} left</span></td></tr>
+              ))}
+            </tbody></table></div>
+          )}
+        </div>
+      </div>
+
+      <div className="acard">
+        <div className="ahead"><div><h2>Recent orders</h2></div><Link href="/admin/orders" className="btn sm ghost">All orders</Link></div>
+        <div className="tbl-wrap">
+          <table className="t">
+            <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Placed</th>{money && <th className="r">Total</th>}</tr></thead>
             <tbody>
               {data.recentOrders.map((o) => (
                 <tr key={o.id}>
-                  <td style={td}>
-                    <Link href={`/admin/orders/${o.id}`} style={{ color: "var(--gold-deep)" }}>{o.orderNumber}</Link>
-                  </td>
-                  <td style={td}>{o.customerEmail ?? "—"}</td>
-                  <td style={td}>
-                    <span style={{ color: STATUS_COLORS[o.status] ?? "var(--ink-muted)", fontWeight: 600 }}>
-                      {STATUS_LABELS[o.status] ?? o.status}
-                    </span>
-                  </td>
-                  <td style={td}>{fmt(o.total)}</td>
+                  <td><Link href={`/admin/orders/${o.id}`}><b>{o.orderNumber}</b></Link></td>
+                  <td>{o.customerEmail ?? "Guest"}</td>
+                  <td><span className={`pill ${STATUS[o.status]?.[1] ?? ""}`}>{STATUS[o.status]?.[0] ?? o.status}</span></td>
+                  <td>{o.placedAt ? new Date(o.placedAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}</td>
+                  {money && <td className="r">{o.total !== null ? gbp(o.total) : ""}</td>}
                 </tr>
               ))}
-              {data.recentOrders.length === 0 && (
-                <tr><td style={td} colSpan={4}>No orders yet.</td></tr>
-              )}
+              {data.recentOrders.length === 0 && <tr><td colSpan={5} className="muted">No orders yet.</td></tr>}
             </tbody>
           </table>
-        </section>
-
-        {/* ── Low-stock alerts ──────────────────────────────────────────── */}
-        <section>
-          <h2 style={{ fontSize: 15, marginBottom: 12 }}>
-            Low-stock alerts {lowStockCount > 0 && <span style={{ color: "var(--danger-text)" }}>({lowStockCount})</span>}
-          </h2>
-          {lowStockCount === 0 ? (
-            <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>All products are above their thresholds.</p>
-          ) : (
-            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  <th style={th}>Product</th>
-                  <th style={th}>Stock</th>
-                  <th style={th}>Threshold</th>
-                  <th style={th}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lowStock.products.map((p) => (
-                  <tr key={p.id}>
-                    <td style={td}>{p.name}</td>
-                    <td style={{ ...td, color: p.stock === 0 ? "var(--danger-text)" : "#8A5A17", fontWeight: 600 }}>{p.stock}</td>
-                    <td style={td}>{p.threshold}</td>
-                    <td style={td}><Link href={`/admin/products/${p.id}`} style={{ color: "var(--gold-deep)" }}>Edit</Link></td>
-                  </tr>
-                ))}
-                {data.lowStock.variants.map((v) => (
-                  <tr key={v.id}>
-                    <td style={td}>
-                      {v.productName}
-                      <span style={{ color: "var(--ink-muted)" }}> — {Object.values(v.attributes).join(" / ")}</span>
-                    </td>
-                    <td style={{ ...td, color: v.stock === 0 ? "var(--danger-text)" : "#8A5A17", fontWeight: 600 }}>{v.stock}</td>
-                    <td style={td}>{v.threshold}</td>
-                    <td style={td}><Link href={`/admin/products/${v.productId}`} style={{ color: "var(--gold-deep)" }}>Edit</Link></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
-
-      {/* ── Order counts by status ─────────────────────────────────────── */}
-      <section style={{ marginTop: 32 }}>
-        <h2 style={{ fontSize: 15, marginBottom: 12 }}>Orders by status</h2>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {Object.entries(STATUS_LABELS).map(([status, label]) => {
-            const count = data.orderCounts[status] ?? 0;
-            return (
-              <Link
-                key={status}
-                href={`/admin/orders?status=${status}`}
-                style={{ textDecoration: "none" }}
-              >
-                <div style={{ border: "1px solid var(--line)", borderRadius: 6, padding: "8px 14px", textAlign: "center", minWidth: 90 }}>
-                  <div style={{ fontWeight: 700, fontSize: 20 }}>{count}</div>
-                  <div style={{ fontSize: 12, color: STATUS_COLORS[status] ?? "var(--ink-muted)" }}>{label}</div>
-                </div>
-              </Link>
-            );
-          })}
         </div>
-      </section>
-    </main>
+      </div>
+    </>
   );
 }
-
-function StatCard({ label, value, sub, alert }: { label: string; value: string; sub?: string; alert?: boolean }) {
-  return (
-    <div style={{ border: `1px solid ${alert ? "#E3B4A4" : "var(--line)"}`, borderRadius: 8, padding: 16, background: alert ? "var(--danger-bg)" : "var(--surface)" }}>
-      <div style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: alert ? "var(--danger-text)" : "var(--ink)" }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 4 }}>{sub}</div>}
-    </div>
-  );
-}
-
-const th: React.CSSProperties = { border: "1px solid var(--line)", padding: "6px 8px", textAlign: "left", background: "var(--surface-2)" };
-const td: React.CSSProperties = { border: "1px solid var(--line)", padding: "6px 8px" };

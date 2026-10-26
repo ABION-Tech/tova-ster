@@ -65,7 +65,7 @@ export default function AdminProductDetailPage() {
   }
 
   return (
-    <main style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 4 }}>
       <p>
         <a href="/admin/products">← All products</a>
       </p>
@@ -98,7 +98,7 @@ export default function AdminProductDetailPage() {
       <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
         <ImagesSection product={product} onChanged={load} withError={withError} />
       </fieldset>
-    </main>
+    </div>
   );
 }
 

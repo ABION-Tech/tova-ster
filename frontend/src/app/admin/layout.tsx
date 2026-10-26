@@ -4,140 +4,117 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { adminFetch, adminJson } from "../../lib/backend";
-import styles from "./layout.module.css";
-import "../../styles/globals.css"; // old admin look until the admin is rebuilt on the Tova-Ster design
-
 import { AdminContext, type AdminMe as Me } from "../../lib/admin/AdminContext";
+import "../../styles/admin.css"; // the demo's admin look (shell classes live in tova.css)
 
 interface AdminMe {
   admin: Me;
   areas: string[];
 }
 
-// Each link belongs to an area; the server says which areas this person's role may open.
-const NAV_LINKS = [
-  { href: "/admin", label: "Dashboard", area: "dashboard" },
-  { href: "/admin/orders", label: "Orders", area: "orders" },
-  { href: "/admin/baskets", label: "Baskets", area: "baskets" },
-  { href: "/admin/products", label: "Products", area: "products" },
-  { href: "/admin/categories", label: "Categories", area: "categories" },
-  { href: "/admin/reviews", label: "Reviews", area: "reviews" },
-  { href: "/admin/homepage", label: "Homepage", area: "homepage" },
-  { href: "/admin/growth", label: "Growth tools", area: "growth" },
-  { href: "/admin/instagram", label: "Instagram", area: "instagram" },
-  { href: "/admin/team", label: "Team", area: "team" },
+// Grouped like the demo. Each link belongs to an area; the server says which
+// areas this person's role may open, and only those are shown.
+const NAV: { group: string; links: { href: string; label: string; area: string }[] }[] = [
+  { group: "Overview", links: [
+    { href: "/admin", label: "Dashboard", area: "dashboard" },
+    { href: "/admin/orders", label: "Orders", area: "orders" },
+    { href: "/admin/customers", label: "Customers", area: "customers" },
+    { href: "/admin/baskets", label: "Baskets", area: "baskets" },
+  ] },
+  { group: "Catalogue", links: [
+    { href: "/admin/products", label: "Products", area: "products" },
+    { href: "/admin/categories", label: "Categories", area: "categories" },
+    { href: "/admin/reviews", label: "Reviews", area: "reviews" },
+  ] },
+  { group: "Grow", links: [
+    { href: "/admin/homepage", label: "Homepage & media", area: "homepage" },
+    { href: "/admin/growth", label: "Growth tools", area: "growth" },
+    { href: "/admin/instagram", label: "Instagram", area: "instagram" },
+  ] },
+  { group: "Setup", links: [
+    { href: "/admin/team", label: "Team & access", area: "team" },
+  ] },
 ];
+const ALL_LINKS = NAV.flatMap((g) => g.links);
 const areaOf = (path: string) =>
-  [...NAV_LINKS].sort((a, b) => b.href.length - a.href.length).find((l) => path === l.href || path.startsWith(`${l.href}/`))?.area;
+  [...ALL_LINKS].sort((a, b) => b.href.length - a.href.length).find((l) => path === l.href || path.startsWith(`${l.href}/`))?.area;
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "TS";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isLoginPage = pathname === "/admin/login" || pathname === "/admin/accept-invite";
+  const isOpenPage = pathname === "/admin/login" || pathname === "/admin/accept-invite";
 
   const [admin, setAdmin] = useState<AdminMe["admin"] | null>(null);
   const [areas, setAreas] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
+  // Session cookie can expire mid-session (12h TTL): re-check on every page
+  // change so a stale tab goes to sign-in instead of a page full of errors.
   useEffect(() => {
-    if (isLoginPage) {
-      setChecked(true);
-      return;
-    }
+    setNavOpen(false);
+    if (isOpenPage) { setChecked(true); return; }
     adminJson<AdminMe>("/admin/auth/me")
-      .then((data) => { setAdmin(data.admin); setAreas(data.areas ?? []); })
+      .then((d) => { setAdmin(d.admin); setAreas(d.areas ?? []); })
       .catch(() => router.replace("/admin/login"))
       .finally(() => setChecked(true));
-  }, [isLoginPage, router]);
+  }, [pathname, isOpenPage, router]);
 
-  // Session cookie can expire mid-session (12h TTL) — re-check on every
-  // route change so a stale tab gets bounced to login instead of showing
-  // a page full of 401s.
-  useEffect(() => {
-    setMobileNavOpen(false);
-    if (isLoginPage || !checked) return;
-    adminJson<AdminMe>("/admin/auth/me")
-      .then((data) => { setAdmin(data.admin); setAreas(data.areas ?? []); })
-      .catch(() => router.replace("/admin/login"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  async function handleLogout() {
+  async function signOut() {
     await adminFetch("/admin/auth/logout", { method: "POST" });
     router.push("/admin/login");
   }
 
-  if (isLoginPage) return <>{children}</>;
-
-  if (!checked) {
-    return (
-      <div style={{ padding: 48, textAlign: "center", color: "var(--ink-muted)", fontSize: 14 }}>
-        Checking admin session…
-      </div>
-    );
+  if (isOpenPage) return <>{children}</>;
+  if (!checked || !admin) {
+    return <div style={{ minHeight: "100vh", background: "var(--black)", color: "#CFCBC2", display: "grid", placeItems: "center", fontSize: 14 }}>{checked ? "" : "Checking your sign-in…"}</div>;
   }
-  if (!admin) return null; // redirect already in flight
-  const links = NAV_LINKS.filter((l) => areas.includes(l.area));
+
+  const groups = NAV.map((g) => ({ ...g, links: g.links.filter((l) => areas.includes(l.area)) })).filter((g) => g.links.length);
+  const links = groups.flatMap((g) => g.links);
   const area = areaOf(pathname);
   const allowed = !area || areas.includes(area);
+  const current = links.find((l) => l.area === area)?.label ?? "Admin";
+  const isCurrent = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <nav className={styles.nav}>
-        <Link href="/admin" className={styles.brand}>
-          Tova-Ster Admin
-        </Link>
-        <div className={styles.links} style={{ display: "flex", gap: 4 }}>
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} className={`${styles.link} ${pathname === l.href ? styles.linkActive : ""}`}>
-              {l.label}
-            </Link>
-          ))}
-        </div>
-        <span className={styles.adminName}>{admin.name} · {admin.role}</span>
-        <button onClick={handleLogout} className={styles.logoutBtn} style={{ marginLeft: 12 }}>
-          Log out
-        </button>
-        <button className={styles.hamburger} aria-label="Open admin menu" onClick={() => setMobileNavOpen((o) => !o)}>
-          <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="var(--ink)" strokeWidth={1.6}>
-            <path d="M3 6h18M3 12h18M3 18h18" />
-          </svg>
-        </button>
-      </nav>
-
-      {mobileNavOpen && (
-        <div className={styles.mobileMenu}>
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`${styles.link} ${pathname === l.href ? styles.linkActive : ""}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              {l.label}
-            </Link>
-          ))}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 10px 0" }}>
-            <span style={{ fontSize: 13, color: "var(--ink-muted)" }}>{admin.name}</span>
-            <button onClick={handleLogout} className={styles.logoutBtn}>
-              Log out
-            </button>
+    <div className="admin">
+      <div className="atop">
+        <button className="btn sm light" onClick={() => setNavOpen(true)} aria-expanded={navOpen} aria-controls="adminside">Menu</button>
+        <b>{current}</b>
+        <span className="brandmini">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/monogram.png" alt="" />Tova-Ster</span>
+      </div>
+      {navOpen && <div className="scrim anavscrim" onClick={() => setNavOpen(false)} />}
+      <aside className={`side${navOpen ? " open" : ""}`} id="adminside" aria-label="Admin">
+        <div className="brand">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/monogram.png" alt="" /><b>Tova-Ster</b></div>
+        {groups.map((g) => (
+          <div key={g.group}>
+            <div className="grp">{g.group}</div>
+            {g.links.map((l) => (
+              <Link key={l.href} href={l.href} className="nav" aria-current={isCurrent(l.href) ? "page" : undefined}>{l.label}</Link>
+            ))}
           </div>
+        ))}
+        <div className="spacer" />
+        <a className="nav" href="/" target="_blank" rel="noopener">View the shop</a>
+        <div className="whoami">
+          <span className="avatar">{initials(admin.name)}</span>
+          <span>{admin.name}<br /><small>{admin.role}</small></span>
+          <button onClick={signOut}>Sign out</button>
         </div>
-      )}
-
-      <div className={styles.content}>
+      </aside>
+      <main className="amain">
         <AdminContext.Provider value={{ admin, areas }}>
           {allowed ? children : (
-            <div style={{ padding: 24, border: "1px solid #E2DFD9", borderRadius: 12, background: "#fff", maxWidth: 560 }}>
-              <h1 style={{ marginTop: 0 }}>Not part of your role</h1>
-              <p>Your role ({admin.role}) doesn&apos;t include this page. Ask the owner if you need it.</p>
-              <Link href={links[0]?.href ?? "/admin"} className="btn">Go to {links[0]?.label ?? "Dashboard"}</Link>
+            <div className="acard" style={{ maxWidth: 560 }}>
+              <h2>Not part of your role</h2>
+              <p className="muted">Your role ({admin.role}) doesn&apos;t include this page. Ask the owner if you need it.</p>
+              <div><Link href={links[0]?.href ?? "/admin"} className="btn sm">Go to {links[0]?.label ?? "Dashboard"}</Link></div>
             </div>
           )}
         </AdminContext.Provider>
-      </div>
+      </main>
     </div>
   );
 }

@@ -26,6 +26,11 @@ export const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "GET /admin/orders": ALL,
   "GET /admin/orders/:id": ALL,
   "PATCH /admin/orders/:id/status": MP, // Packers only pack/dispatch/deliver: checked in the route
+  // Customers (Support answers customer questions here)
+  "GET /admin/customers": MS,
+  "GET /admin/customers/:id": MS,
+  "POST /admin/customers/:id/notes": MS,
+  "POST /admin/customers/:id/points": MS,
   // Baskets, activity, reports
   "GET /admin/baskets": MS,
   "GET /admin/activity": MS,
@@ -85,6 +90,7 @@ const ANY_ADMIN = new Set(["POST /admin/auth/logout", "GET /admin/auth/me"]);
 export const AREAS: Record<string, string> = {
   dashboard: "GET /admin/dashboard",
   orders: "GET /admin/orders",
+  customers: "GET /admin/customers",
   baskets: "GET /admin/baskets",
   products: "GET /admin/products",
   categories: "POST /admin/categories",

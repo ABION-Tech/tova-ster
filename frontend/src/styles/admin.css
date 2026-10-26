@@ -1,0 +1,94 @@
+/* Admin on the demo's design. The shell classes (.admin, .side, .atop, .amain,
+   .kpi, .acard, table.t, .pill, .ain, .switch) come from tova.css; this file
+   fits the real admin's links into them and restyles the older admin pages'
+   classes (btn-primary, input, card...) to match, so every page looks the same. */
+
+.admin { min-height: 100vh; }
+.side { height: 100vh; }
+.side a.nav { display: flex; align-items: center; gap: 10px; width: 100%; color: #CFCBC2; padding: 9px 10px; border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none; }
+.side a.nav:hover { background: #22211F; color: #fff; }
+.side a.nav[aria-current="page"] { background: #2C2A27; color: #fff; }
+.side a.nav .n { margin-left: auto; background: var(--gold); color: #1A1406; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; }
+.side .whoami { display: flex; align-items: center; gap: 10px; padding: 12px 10px 4px; border-top: 1px solid #2C2A27; margin-top: 8px; font-size: 13px; color: #fff; }
+.side .whoami small { color: #8A867F; }
+.side .whoami .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--gold); color: #1A1406; display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.side .whoami button { margin-left: auto; background: none; border: 0; color: #CFCBC2; font-size: 12px; cursor: pointer; padding: 0; width: auto; }
+.side .whoami button:hover { color: #fff; text-decoration: underline; }
+.amain h1 { font-family: var(--ui); font-size: 26px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+.amain h2 { font-family: var(--ui); }
+.amain > * { min-width: 0; }
+
+/* Older admin pages: same look as the demo */
+.amain .display-3 { font-family: var(--ui); font-size: 26px; font-weight: 600; letter-spacing: -.01em; }
+.amain .btn { min-height: 38px; padding: 0 16px; font-size: 14px; }
+.amain .btn-sm { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.amain .btn-primary { background: var(--black); color: #fff; }
+.amain .btn-primary:hover:not(:disabled) { background: #2A2926; }
+.amain .btn-outline, .amain .btn-ghost { background: #fff; color: var(--ink); border-color: var(--line); }
+.amain .btn-outline:hover:not(:disabled), .amain .btn-ghost:hover:not(:disabled) { border-color: var(--ink); background: #fff; }
+.amain .btn-full { width: 100%; }
+.amain .btn:disabled { opacity: .45; cursor: not-allowed; }
+.amain .field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.amain .input, .amain input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]), .amain select, .amain textarea {
+  font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+}
+.amain .input, .amain input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]), .amain select { min-height: 38px; padding: 0 10px; }
+.amain textarea { padding: 8px 10px; }
+.amain .input:focus, .amain input:focus, .amain select:focus, .amain textarea:focus { outline: none; border-color: var(--ink); }
+.amain .card { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: block; }
+.amain .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+.amain .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.amain .stat-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; }
+.amain .stat-card.alert { border-color: #E3B4A4; background: var(--sale-soft); }
+.amain table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.amain table th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.amain table td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.amain a { color: var(--ink); }
+.amain details > summary { cursor: pointer; }
+.amain section, .amain .acard { background: #fff; border: 1px solid var(--line); border-radius: var(--r); }
+.amain hr { border: 0; border-top: 1px solid var(--line); }
+.amain [role=status] { border-radius: 10px; }
+.amain .note { padding: 12px 14px; border-radius: 10px; background: var(--gold-soft); font-size: 14px; }
+.amain .muted { color: var(--ink-2); font-size: 13px; }
+.amain .pill.cancelled, .amain .pill.refunded { background: var(--sale-soft); color: var(--sale); }
+.amain .pill.pending { background: var(--surface-2); color: var(--ink-2); }
+.amain .pill.processing { background: var(--warn-soft); color: var(--warn); }
+.amain .pill.shipped, .amain .pill.delivered { background: var(--good-soft); color: var(--good); }
+.amain .kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.amain .kpi a { color: inherit; }
+
+/* Sign-in pages on the demo's dark background */
+.adminlogin { min-height: 100vh; }
+.adminlogin .card { background: #fff; border-radius: var(--r-lg); padding: 32px 28px; width: 100%; max-width: 400px; }
+
+@media (max-width: 900px) {
+  .admin { grid-template-columns: 1fr; }
+  .atop { display: flex; }
+  .side { position: fixed; inset: 0 auto 0 0; width: 280px; z-index: 95; transform: translateX(-100%); transition: transform .25s var(--ease); height: 100vh; }
+  .side.open { transform: none; }
+  .amain { padding: 20px 16px 40px; }
+  .amain .two-col, .amain .grid-4 { grid-template-columns: 1fr; }
+}
+
+.adminlogin .brandrow { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.adminlogin .brandrow img { width: 22px; height: 30px; object-fit: contain; }
+.adminlogin .brandrow b { font-family: var(--display); font-size: 18px; font-weight: 600; }
+.adminlogin h1 { font-size: 24px; font-weight: 600; margin: 0 0 18px; }
+.adminlogin .field-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.adminlogin .input { width: 100%; height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; font: inherit; background: #fff; box-sizing: border-box; }
+.adminlogin .input:focus { outline: none; border-color: var(--ink); }
+.adminlogin .btn-primary { background: var(--black); color: #fff; }
+.adminlogin .btn-full { width: 100%; }
+.adminlogin .error { font-size: 13px; color: var(--sale); background: var(--sale-soft); padding: 10px 12px; border-radius: 8px; }
+.adminlogin form { display: grid; gap: 14px; }
+
+/* Names the older admin pages use, mapped onto the shop's palette */
+.admin, .adminlogin {
+  --gold-deep: var(--gold-ink); --ink-muted: var(--ink-2); --ink-faint: var(--ink-3); --line-strong: #CFCBC2;
+  --danger-text: var(--sale); --danger-bg: var(--sale-soft); --success-text: var(--good); --success-bg: var(--good-soft);
+  --moss: #4F5F48; --moss-ink: #fff; --font-display: var(--ui); --font-body: var(--ui);
+  --radius-sm: 8px; --radius: 14px; --radius-lg: 22px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 48px;
+}
+.amain a.btn { color: var(--on-black); text-decoration: none; }
+.amain a.btn.ghost, .amain a.btn.light { color: var(--ink); }

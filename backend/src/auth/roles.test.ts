@@ -74,7 +74,7 @@ test("menu areas follow the table", () => {
   assert.deepEqual(areasFor("Packer"), ["dashboard", "orders", "products"]);
   assert.ok(areasFor("Owner").includes("team"));
   assert.ok(!areasFor("Manager").includes("team"));
-  assert.deepEqual(areasFor("Support"), ["dashboard", "orders", "baskets", "products", "reviews"]);
+  assert.deepEqual(areasFor("Support"), ["dashboard", "orders", "customers", "baskets", "products", "reviews"]);
 });
 
 test("a Packer can't cancel an order", async () => {
