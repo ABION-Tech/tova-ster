@@ -59,6 +59,9 @@ async function inviteMode(): Promise<boolean> {
     [email, name, role],
   );
   const { createInvite } = await import("../auth/team.js");
+  // Also the way back in for a locked-out Owner: two-step sign-in is reset and set up again after the link.
+  const { turnOff } = await import("../auth/totp.js");
+  await turnOff(r.rows[0].id);
   const inv = await createInvite(r.rows[0].id, null, process.env.APP_URL ?? "http://localhost:3000");
   console.log(`Invite for ${email} (${role}), valid until ${inv.expiresAt.toISOString()}:\n${inv.link}`);
   return true;

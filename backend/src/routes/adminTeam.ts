@@ -4,6 +4,7 @@ import { requireRole, type AdminRole } from "../auth/adminSession.js";
 import { ROLES, activeOwnerCount, cleanEmail, createInvite, listTeam } from "../auth/team.js";
 import { logEvent, maskEmail } from "../events/eventsRepo.js";
 import { emailService } from "../services/email/index.js";
+import { turnOff } from "../auth/totp.js";
 
 /**
  * Team page (Owner only, also enforced by auth/permissions.ts):
@@ -103,6 +104,18 @@ export const adminTeamRoutes: FastifyPluginAsync = async (app: FastifyInstance) 
     await pool.query(`UPDATE admin_invites SET used_at = now() WHERE admin_user_id = $1 AND used_at IS NULL`, [id]);
     await logEvent({ type: "admin", adminId: admin.id, message: `${admin.name} removed ${m.name} (${m.role}) from the team`, meta: { action: "team_remove", memberId: id, role: m.role } });
     return reply.send({ ok: true, signedOut: true });
+  });
+  app.post("/admin/team/:id/reset-2fa", async (req, reply) => {
+    const admin = await requireRole(req, reply);
+    if (!admin) return;
+    const { id } = req.params as { id: string };
+    const cur = await pool.query<{ name: string; active: boolean }>(`SELECT name, active FROM admin_users WHERE id = $1`, [id]);
+    const m = cur.rows[0];
+    if (!m || !m.active) return reply.status(404).send({ error: "Team member not found." });
+    await turnOff(id);
+    await pool.query(`DELETE FROM admin_sessions WHERE admin_user_id = $1`, [id]);
+    await logEvent({ type: "admin", adminId: admin.id, message: `${admin.name} reset two-step sign-in for ${m.name}`, meta: { action: "two_step_reset", memberId: id } });
+    return reply.send({ ok: true });
   });
 };
 

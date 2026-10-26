@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getAdminFromRequest, type AdminRole } from "./adminSession.js";
+import { twoStepRequired } from "./totp.js";
 
 /**
  * Who may use each admin route. The Owner may always do everything, so only
@@ -80,11 +81,12 @@ export const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "PATCH /admin/team/:id": OWNER,
   "POST /admin/team/:id/invite": OWNER,
   "DELETE /admin/team/:id": OWNER,
+  "POST /admin/team/:id/reset-2fa": OWNER,
 };
 
 /** Routes any signed-in team member, or anyone, may call. */
-const OPEN = new Set(["POST /admin/auth/login", "POST /admin/auth/accept-invite", "GET /admin/auth/invite"]);
-const ANY_ADMIN = new Set(["POST /admin/auth/logout", "GET /admin/auth/me"]);
+const OPEN = new Set(["POST /admin/auth/login", "POST /admin/auth/accept-invite", "GET /admin/auth/invite", "POST /admin/auth/verify-code"]);
+const ANY_ADMIN = new Set(["POST /admin/auth/logout", "GET /admin/auth/me", "GET /admin/auth/2fa", "POST /admin/auth/2fa/setup", "POST /admin/auth/2fa/confirm", "POST /admin/auth/2fa/off"]);
 
 /** Admin areas (menu items) and the route that decides whether a role sees them. */
 export const AREAS: Record<string, string> = {
@@ -97,6 +99,9 @@ export const AREAS: Record<string, string> = {
   reviews: "GET /admin/reviews",
   homepage: "PUT /admin/settings/:key",
   growth: "GET /admin/newsletter",
+  offers: "GET /admin/offers",
+  emails: "PUT /admin/settings/:key",
+  activity: "GET /admin/activity",
   instagram: "GET /admin/instagram",
   team: "GET /admin/team",
 };
@@ -128,6 +133,10 @@ export async function adminGate(req: FastifyRequest, reply: FastifyReply): Promi
     return reply;
   }
   if (ANY_ADMIN.has(key)) return;
+  if (twoStepRequired() && !admin.twoStep) {
+    reply.status(403).send({ error: "Set up two-step sign-in first.", code: "two_step_required" });
+    return reply;
+  }
   if (!(key in ROUTE_ROLES)) req.log.warn({ route: key }, "Admin route has no permission entry; Owner only.");
   if (!roleMay(admin.role, key)) {
     reply.status(403).send({ error: `Your role (${admin.role}) can't do this. Ask the owner.` });

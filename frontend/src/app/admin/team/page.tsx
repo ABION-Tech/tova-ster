@@ -6,7 +6,7 @@ import type { AdminRole } from "../../../lib/admin/AdminContext";
 
 interface Member {
   id: string; name: string; email: string; role: AdminRole; active: boolean; has_password: boolean;
-  last_login_at: string | null; created_at: string; invite_expires_at: string | null;
+  last_login_at: string | null; created_at: string; invite_expires_at: string | null; two_step: boolean;
 }
 interface Team { team: Member[]; roles: AdminRole[]; me: string }
 interface InviteResult { inviteLink: string; expiresAt: string; emailed: boolean }
@@ -48,6 +48,10 @@ export default function TeamAdmin() {
     await adminJson(`/admin/team/${m.id}`, { method: "PATCH", body: JSON.stringify({ role }) });
     setMsg(`${m.name} is now ${role}.`);
   });
+  const reset2fa = (m: Member) => { if (confirm(`Reset two-step sign-in for ${m.name}? Use this if they lost their phone. They're signed out and set it up again at their next sign-in.`)) act(async () => {
+    await adminJson(`/admin/team/${m.id}/reset-2fa`, { method: "POST" });
+    setMsg(`Two-step sign-in reset for ${m.name}.`);
+  }); };
   const remove = (m: Member) => { if (confirm(`Remove ${m.name} from the team? They are signed out straight away.`)) act(async () => {
     await adminJson(`/admin/team/${m.id}`, { method: "DELETE" });
     setMsg(`${m.name} was removed and signed out.`);
@@ -95,7 +99,7 @@ export default function TeamAdmin() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr style={{ textAlign: "left", color: "#6E685E" }}>
-              <th style={{ padding: 6 }}>Person</th><th style={{ padding: 6 }}>Role</th><th style={{ padding: 6 }}>Status</th><th style={{ padding: 6 }}>Last sign-in</th><th style={{ padding: 6 }} />
+              <th style={{ padding: 6 }}>Person</th><th style={{ padding: 6 }}>Role</th><th style={{ padding: 6 }}>Status</th><th style={{ padding: 6 }}>Two-step</th><th style={{ padding: 6 }}>Last sign-in</th><th style={{ padding: 6 }} />
             </tr></thead>
             <tbody>{active.map((m) => (
               <tr key={m.id} style={{ borderTop: "1px solid #EEE" }}>
@@ -106,9 +110,11 @@ export default function TeamAdmin() {
                   </select>
                 </td>
                 <td style={{ padding: 6 }}>{m.has_password ? "Active" : m.invite_expires_at ? `Invited, link valid until ${when(m.invite_expires_at)}` : "Invited, link expired"}</td>
+                <td style={{ padding: 6 }}>{m.two_step ? <span className="pill active">On</span> : <span className="pill paused">Not set up</span>}</td>
                 <td style={{ padding: 6 }}>{when(m.last_login_at)}</td>
                 <td style={{ padding: 6, whiteSpace: "nowrap" }}>
                   <button className="btn" disabled={busy} onClick={() => newLink(m)}>{m.has_password ? "Reset password" : "New link"}</button>{" "}
+                  {m.two_step && m.id !== data.me && <><button className="btn" disabled={busy} onClick={() => reset2fa(m)}>Reset two-step</button>{" "}</>}
                   <button className="btn" disabled={busy} onClick={() => remove(m)}>Remove</button>
                 </td>
               </tr>

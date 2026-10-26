@@ -10,6 +10,7 @@ import "../../styles/admin.css"; // the demo's admin look (shell classes live in
 interface AdminMe {
   admin: Me;
   areas: string[];
+  twoStep?: { enabled: boolean; required: boolean };
 }
 
 // Grouped like the demo. Each link belongs to an area; the server says which
@@ -20,6 +21,7 @@ const NAV: { group: string; links: { href: string; label: string; area: string }
     { href: "/admin/orders", label: "Orders", area: "orders" },
     { href: "/admin/customers", label: "Customers", area: "customers" },
     { href: "/admin/baskets", label: "Baskets", area: "baskets" },
+    { href: "/admin/activity", label: "Activity", area: "activity" },
   ] },
   { group: "Catalogue", links: [
     { href: "/admin/products", label: "Products", area: "products" },
@@ -29,10 +31,13 @@ const NAV: { group: string; links: { href: string; label: string; area: string }
   { group: "Grow", links: [
     { href: "/admin/homepage", label: "Homepage & media", area: "homepage" },
     { href: "/admin/growth", label: "Growth tools", area: "growth" },
+    { href: "/admin/emails", label: "Emails", area: "emails" },
+    { href: "/admin/offers", label: "Bundles & codes", area: "offers" },
     { href: "/admin/instagram", label: "Instagram", area: "instagram" },
   ] },
   { group: "Setup", links: [
     { href: "/admin/team", label: "Team & access", area: "team" },
+    { href: "/admin/security", label: "Two-step sign-in", area: "security" },
   ] },
 ];
 const ALL_LINKS = NAV.flatMap((g) => g.links);
@@ -49,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [areas, setAreas] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [needsTwoStep, setNeedsTwoStep] = useState(false);
 
   // Session cookie can expire mid-session (12h TTL): re-check on every page
   // change so a stale tab goes to sign-in instead of a page full of errors.
@@ -56,7 +62,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setNavOpen(false);
     if (isOpenPage) { setChecked(true); return; }
     adminJson<AdminMe>("/admin/auth/me")
-      .then((d) => { setAdmin(d.admin); setAreas(d.areas ?? []); })
+      .then((d) => {
+        setAdmin(d.admin); setAreas([...(d.areas ?? []), "security"]);
+        setNeedsTwoStep(Boolean(d.twoStep?.required && !d.twoStep.enabled));
+      })
       .catch(() => router.replace("/admin/login"))
       .finally(() => setChecked(true));
   }, [pathname, isOpenPage, router]);
@@ -106,7 +115,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
       <main className="amain">
         <AdminContext.Provider value={{ admin, areas }}>
-          {allowed ? children : (
+          {needsTwoStep && pathname !== "/admin/security" ? (
+            <div className="acard" style={{ maxWidth: 560 }}>
+              <h2>Set up two-step sign-in first</h2>
+              <p className="muted">The team signs in with a password and a code from an authenticator app. It takes about a minute.</p>
+              <div><Link href="/admin/security" className="btn sm">Set it up now</Link></div>
+            </div>
+          ) : allowed ? children : (
             <div className="acard" style={{ maxWidth: 560 }}>
               <h2>Not part of your role</h2>
               <p className="muted">Your role ({admin.role}) doesn&apos;t include this page. Ask the owner if you need it.</p>

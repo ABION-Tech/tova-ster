@@ -16,6 +16,8 @@ export interface AdminAuthUser {
   email: string;
   name: string;
   role: AdminRole;
+  /** Two-step sign-in is set up for this person. */
+  twoStep: boolean;
 }
 
 function adminCookieOptions(maxAgeMs: number) {
@@ -62,7 +64,7 @@ async function lookupAdmin(req: FastifyRequest): Promise<AdminAuthUser | null> {
 
   const hash = hashToken(raw);
   const result = await pool.query<AdminAuthUser>(
-    `SELECT a.id, a.email, a.name, a.role
+    `SELECT a.id, a.email, a.name, a.role, (a.totp_enabled_at IS NOT NULL AND a.totp_secret IS NOT NULL) AS "twoStep"
      FROM admin_sessions s
      JOIN admin_users a ON a.id = s.admin_user_id
      WHERE s.token_hash = $1 AND s.expires_at > now() AND a.active`,

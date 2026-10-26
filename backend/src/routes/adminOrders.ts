@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireAdmin } from "../auth/adminSession.js";
 import { pool } from "../db/pool.js";
 import { emailService } from "../services/email/index.js";
+import { getSetting } from "../settings/settingsRepo.js";
 
 const VALID_STATUSES = new Set([
   "PENDING_PAYMENT", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED",
@@ -320,7 +321,10 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
         );
         const r = row.rows[0];
         const customerEmail = r?.user_email ?? r?.guest_email;
-        if (customerEmail && r) {
+        // Admin › Emails can switch the dispatched and delivered emails off.
+        const emailsOn = await getSetting("emails");
+        const wanted = newStatus === "SHIPPED" ? emailsOn.dispatched : emailsOn.delivered;
+        if (customerEmail && r && wanted) {
           const template = newStatus === "SHIPPED" ? "order_shipped" : "order_status_update";
           const subject =
             newStatus === "SHIPPED"

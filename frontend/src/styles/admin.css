@@ -92,3 +92,5 @@
 }
 .amain a.btn { color: var(--on-black); text-decoration: none; }
 .amain a.btn.ghost, .amain a.btn.light { color: var(--ink); }
+@media (max-width: 600px) { .amain .setup2fa { grid-template-columns: 1fr !important; } }
+.amain .switch { display: inline-block; vertical-align: middle; }

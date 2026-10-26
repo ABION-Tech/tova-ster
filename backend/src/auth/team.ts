@@ -17,12 +17,13 @@ export interface TeamMember {
   last_login_at: string | null;
   created_at: string;
   invite_expires_at: string | null;
+  two_step: boolean;
 }
 
 export async function listTeam(): Promise<TeamMember[]> {
   const r = await pool.query<TeamMember>(
     `SELECT a.id, a.name, a.email, a.role, a.active, (a.password_hash IS NOT NULL) AS has_password,
-            a.last_login_at, a.created_at,
+            a.last_login_at, a.created_at, (a.totp_enabled_at IS NOT NULL AND a.totp_secret IS NOT NULL) AS two_step,
             (SELECT max(i.expires_at) FROM admin_invites i
               WHERE i.admin_user_id = a.id AND i.used_at IS NULL AND i.expires_at > now()) AS invite_expires_at
        FROM admin_users a

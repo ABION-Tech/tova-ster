@@ -74,7 +74,7 @@ test("menu areas follow the table", () => {
   assert.deepEqual(areasFor("Packer"), ["dashboard", "orders", "products"]);
   assert.ok(areasFor("Owner").includes("team"));
   assert.ok(!areasFor("Manager").includes("team"));
-  assert.deepEqual(areasFor("Support"), ["dashboard", "orders", "customers", "baskets", "products", "reviews"]);
+  assert.deepEqual(areasFor("Support"), ["dashboard", "orders", "customers", "baskets", "products", "reviews", "offers", "activity"]);
 });
 
 test("a Packer can't cancel an order", async () => {
@@ -121,4 +121,60 @@ test("team: invite, accept, role change, last-Owner safeguard, removal signs out
   } finally {
     if (others.rowCount) await pool.query(`UPDATE admin_users SET active = true WHERE id = ANY($1)`, [others.rows.map((r) => r.id)]);
   }
+});
+
+test("two-step sign-in: RFC 6238 code, setup, sign-in, recovery code, no replay, required gate", async () => {
+  const { codeAt, base32Decode } = await import("./totp.js");
+  // RFC 6238 test vector (SHA-1, T = 59 s): 94287082, last six digits 287082
+  assert.equal(codeAt(Buffer.from("12345678901234567890"), 1), "287082");
+
+  const email = `${tag}-2fa@example.com`;
+  const { hashPassword } = await import("./passwords.js");
+  const r = await pool.query<{ id: string }>(`INSERT INTO admin_users (email, name, role, active, password_hash) VALUES ($1, 'Two Step', 'Manager', true, $2) RETURNING id`, [email, await hashPassword("two-step-password-1")]);
+  const id = r.rows[0].id;
+  const login = () => app.inject({ method: "POST", url: "/admin/auth/login", payload: { email, password: "two-step-password-1" } });
+  // Required: a signed-in person without two-step can't use the admin yet
+  process.env.ADMIN_2FA_REQUIRED = "true";
+  try {
+    const first = await login();
+    assert.equal(first.statusCode, 200);
+    assert.equal((first.json() as { setupTwoStep: boolean }).setupTwoStep, true);
+    const cookie = String(first.headers["set-cookie"]).split(";")[0];
+    const blocked = await app.inject({ method: "GET", url: "/admin/orders", headers: { cookie } });
+    assert.equal(blocked.statusCode, 403);
+    assert.equal((blocked.json() as { code: string }).code, "two_step_required");
+    // Setup: wrong code refused, right code gives 8 recovery codes
+    const setup = (await app.inject({ method: "POST", url: "/admin/auth/2fa/setup", headers: { cookie } })).json() as { secret: string; qrSvg: string };
+    assert.ok(setup.qrSvg.startsWith("<svg"));
+    const step = () => Math.floor(Date.now() / 30000);
+    assert.equal((await app.inject({ method: "POST", url: "/admin/auth/2fa/confirm", headers: { cookie }, payload: { code: "000000" === codeAt(base32Decode(setup.secret), step()) ? "111111" : "000000" } })).statusCode, 400);
+    const conf = await app.inject({ method: "POST", url: "/admin/auth/2fa/confirm", headers: { cookie }, payload: { code: codeAt(base32Decode(setup.secret), step()) } });
+    assert.equal(conf.statusCode, 200, conf.body);
+    const recovery = (conf.json() as { recoveryCodes: string[] }).recoveryCodes;
+    assert.equal(recovery.length, 8);
+    // Now the admin works for this session (cache is per request)
+    assert.equal((await app.inject({ method: "GET", url: "/admin/orders", headers: { cookie } })).statusCode, 200);
+    // Sign-in now asks for a code
+    const second = (await login()).json() as { needsCode: boolean; ticket: string };
+    assert.equal(second.needsCode, true);
+    assert.equal((await app.inject({ method: "POST", url: "/admin/auth/verify-code", payload: { ticket: second.ticket, code: "123456" } })).statusCode, 401);
+    const next = codeAt(base32Decode(setup.secret), step() + 1); // allowed: one step of clock drift
+    const ok = await app.inject({ method: "POST", url: "/admin/auth/verify-code", payload: { ticket: second.ticket, code: next } });
+    assert.equal(ok.statusCode, 200, ok.body);
+    // The same code can't be used again
+    const third = (await login()).json() as { ticket: string };
+    assert.equal((await app.inject({ method: "POST", url: "/admin/auth/verify-code", payload: { ticket: third.ticket, code: next } })).statusCode, 401);
+    // A recovery code works once
+    const rec1 = await app.inject({ method: "POST", url: "/admin/auth/verify-code", payload: { ticket: third.ticket, code: recovery[0] } });
+    assert.equal(rec1.statusCode, 200, rec1.body);
+    const fourth = (await login()).json() as { ticket: string };
+    assert.equal((await app.inject({ method: "POST", url: "/admin/auth/verify-code", payload: { ticket: fourth.ticket, code: recovery[0] } })).statusCode, 401);
+    // Can't be turned off while required; the Owner can reset it
+    assert.equal((await app.inject({ method: "POST", url: "/admin/auth/2fa/off", headers: { cookie }, payload: { code: recovery[1] } })).statusCode, 400);
+    assert.equal((await app.inject({ method: "POST", url: `/admin/team/${id}/reset-2fa`, headers: { cookie: cookies.Owner } })).statusCode, 403); // test Owner has no two-step yet
+  } finally {
+    delete process.env.ADMIN_2FA_REQUIRED;
+  }
+  assert.equal((await app.inject({ method: "POST", url: `/admin/team/${id}/reset-2fa`, headers: { cookie: cookies.Owner } })).statusCode, 200);
+  assert.equal(((await login()).json() as { needsCode?: boolean }).needsCode, undefined);
 });
