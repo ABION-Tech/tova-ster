@@ -7,28 +7,36 @@ import { adminFetch, adminJson } from "../../lib/backend";
 import styles from "./layout.module.css";
 import "../../styles/globals.css"; // old admin look until the admin is rebuilt on the Tova-Ster design
 
+import { AdminContext, type AdminMe as Me } from "../../lib/admin/AdminContext";
+
 interface AdminMe {
-  admin: { id: string; email: string; name: string };
+  admin: Me;
+  areas: string[];
 }
 
+// Each link belongs to an area; the server says which areas this person's role may open.
 const NAV_LINKS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/baskets", label: "Baskets" },
-  { href: "/admin/products", label: "Products" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/reviews", label: "Reviews" },
-  { href: "/admin/homepage", label: "Homepage" },
-  { href: "/admin/growth", label: "Growth tools" },
-  { href: "/admin/instagram", label: "Instagram" },
+  { href: "/admin", label: "Dashboard", area: "dashboard" },
+  { href: "/admin/orders", label: "Orders", area: "orders" },
+  { href: "/admin/baskets", label: "Baskets", area: "baskets" },
+  { href: "/admin/products", label: "Products", area: "products" },
+  { href: "/admin/categories", label: "Categories", area: "categories" },
+  { href: "/admin/reviews", label: "Reviews", area: "reviews" },
+  { href: "/admin/homepage", label: "Homepage", area: "homepage" },
+  { href: "/admin/growth", label: "Growth tools", area: "growth" },
+  { href: "/admin/instagram", label: "Instagram", area: "instagram" },
+  { href: "/admin/team", label: "Team", area: "team" },
 ];
+const areaOf = (path: string) =>
+  [...NAV_LINKS].sort((a, b) => b.href.length - a.href.length).find((l) => path === l.href || path.startsWith(`${l.href}/`))?.area;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isLoginPage = pathname === "/admin/login";
+  const isLoginPage = pathname === "/admin/login" || pathname === "/admin/accept-invite";
 
   const [admin, setAdmin] = useState<AdminMe["admin"] | null>(null);
+  const [areas, setAreas] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -38,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
     adminJson<AdminMe>("/admin/auth/me")
-      .then((data) => setAdmin(data.admin))
+      .then((data) => { setAdmin(data.admin); setAreas(data.areas ?? []); })
       .catch(() => router.replace("/admin/login"))
       .finally(() => setChecked(true));
   }, [isLoginPage, router]);
@@ -50,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setMobileNavOpen(false);
     if (isLoginPage || !checked) return;
     adminJson<AdminMe>("/admin/auth/me")
-      .then((data) => setAdmin(data.admin))
+      .then((data) => { setAdmin(data.admin); setAreas(data.areas ?? []); })
       .catch(() => router.replace("/admin/login"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
@@ -70,6 +78,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
   if (!admin) return null; // redirect already in flight
+  const links = NAV_LINKS.filter((l) => areas.includes(l.area));
+  const area = areaOf(pathname);
+  const allowed = !area || areas.includes(area);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -78,13 +89,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           Tova-Ster Admin
         </Link>
         <div className={styles.links} style={{ display: "flex", gap: 4 }}>
-          {NAV_LINKS.map((l) => (
+          {links.map((l) => (
             <Link key={l.href} href={l.href} className={`${styles.link} ${pathname === l.href ? styles.linkActive : ""}`}>
               {l.label}
             </Link>
           ))}
         </div>
-        <span className={styles.adminName}>{admin.name}</span>
+        <span className={styles.adminName}>{admin.name} · {admin.role}</span>
         <button onClick={handleLogout} className={styles.logoutBtn} style={{ marginLeft: 12 }}>
           Log out
         </button>
@@ -97,7 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {mobileNavOpen && (
         <div className={styles.mobileMenu}>
-          {NAV_LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -116,7 +127,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content}>
+        <AdminContext.Provider value={{ admin, areas }}>
+          {allowed ? children : (
+            <div style={{ padding: 24, border: "1px solid #E2DFD9", borderRadius: 12, background: "#fff", maxWidth: 560 }}>
+              <h1 style={{ marginTop: 0 }}>Not part of your role</h1>
+              <p>Your role ({admin.role}) doesn&apos;t include this page. Ask the owner if you need it.</p>
+              <Link href={links[0]?.href ?? "/admin"} className="btn">Go to {links[0]?.label ?? "Dashboard"}</Link>
+            </div>
+          )}
+        </AdminContext.Provider>
+      </div>
     </div>
   );
 }

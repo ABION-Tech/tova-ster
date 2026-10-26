@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { adminFetch, adminJson } from "../../../../lib/backend";
+import { canEdit, useAdmin } from "../../../../lib/admin/AdminContext";
 
 interface Variant {
   id: string;
@@ -36,6 +37,9 @@ interface Product {
 
 export default function AdminProductDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { admin } = useAdmin();
+  const mayEdit = canEdit(admin?.role, "products");
+  const mayStock = canEdit(admin?.role, "stock");
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,19 +72,32 @@ export default function AdminProductDetailPage() {
       <h1>{product.name}</h1>
       {error && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
 
-      <EditProductForm product={product} onSaved={load} withError={withError} />
+      {!mayEdit && (
+        <p style={{ padding: 12, borderRadius: 8, background: "#F4EAD3", fontSize: 13 }}>
+          View only for your role ({admin?.role}).{mayStock ? " You can update stock below." : ""}
+        </p>
+      )}
+      <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+        <EditProductForm product={product} onSaved={load} withError={withError} />
+      </fieldset>
 
       <hr style={{ margin: "24px 0" }} />
 
       {product.has_variants ? (
-        <VariantsSection product={product} onChanged={load} withError={withError} />
+        <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+          <VariantsSection product={product} onChanged={load} withError={withError} />
+        </fieldset>
       ) : (
-        <StockAdjustSection productId={product.id} currentStock={product.stock} onChanged={load} withError={withError} />
+        <fieldset disabled={!mayStock} style={{ border: 0, padding: 0, margin: 0 }}>
+          <StockAdjustSection productId={product.id} currentStock={product.stock} onChanged={load} withError={withError} />
+        </fieldset>
       )}
 
       <hr style={{ margin: "24px 0" }} />
 
-      <ImagesSection product={product} onChanged={load} withError={withError} />
+      <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+        <ImagesSection product={product} onChanged={load} withError={withError} />
+      </fieldset>
     </main>
   );
 }

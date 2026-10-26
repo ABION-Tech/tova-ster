@@ -39,7 +39,33 @@ function parseArgs(): { email: string; password: string; name: string } {
   return { email, password, name };
 }
 
+async function inviteMode(): Promise<boolean> {
+  // npm run create-admin -- --invite --email=... --name="..." [--role=Owner]
+  // Creates (or re-enables) the account without a password and prints a
+  // one-time link (48 h) to choose one. Used for the first Owner on a server.
+  if (!process.argv.includes("--invite")) return false;
+  const get = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split("=").slice(1).join("=");
+  const email = get("email")?.trim().toLowerCase();
+  const name = get("name")?.trim();
+  const role = get("role") ?? "Owner";
+  if (!email || !name || !["Owner", "Manager", "Support", "Packer"].includes(role)) {
+    console.error('Usage: npm run create-admin -- --invite --email=you@example.com --name="Your Name" [--role=Owner]');
+    process.exit(1);
+  }
+  const r = await pool.query<{ id: string }>(
+    `INSERT INTO admin_users (email, name, role, active) VALUES ($1, $2, $3, true)
+     ON CONFLICT (lower(email)) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, active = true
+     RETURNING id`,
+    [email, name, role],
+  );
+  const { createInvite } = await import("../auth/team.js");
+  const inv = await createInvite(r.rows[0].id, null, process.env.APP_URL ?? "http://localhost:3000");
+  console.log(`Invite for ${email} (${role}), valid until ${inv.expiresAt.toISOString()}:\n${inv.link}`);
+  return true;
+}
+
 async function run(): Promise<void> {
+  if (await inviteMode()) return;
   const { email, password, name } = parseArgs();
   const passwordHash = await hashPassword(password);
 

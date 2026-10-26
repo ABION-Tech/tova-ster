@@ -47,7 +47,9 @@ between unrelated domains (for example `*.vercel.app` and `*.up.railway.app`).
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI` | from Meta; redirect `https://api.tova-ster.com/instagram/oauth/callback` |
 
 3. Settings › Networking › Custom domain `api.tova-ster.com` (add the CNAME it shows at the DNS host).
-4. After the first deploy: `npm run seed` once, then `npm run create-admin` for the Owner (Railway shell).
+4. After the first deploy, create the first Owner with a one-time password link (48 hours):
+   `node dist/db/createAdmin.js --invite --email=owner@example.com --name="Owner Name"`.
+   Everyone else is invited from Admin › Team, which only the Owner sees.
 5. Stripe webhook endpoint: `https://api.tova-ster.com/webhooks/stripe`.
 
 ## 4. Vercel (shop and admin)

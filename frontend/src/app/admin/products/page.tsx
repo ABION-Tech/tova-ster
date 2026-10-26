@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminJson } from "../../../lib/backend";
+import { canEdit, useAdmin } from "../../../lib/admin/AdminContext";
 
 interface Category {
   id: string;
@@ -20,6 +21,7 @@ interface Product {
 }
 
 export default function AdminProductsPage() {
+  const { admin } = useAdmin();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -79,7 +81,7 @@ export default function AdminProductsPage() {
     <main>
       <h1 className="display-3" style={{ marginBottom: 20 }}>Products</h1>
 
-      <details style={{ marginBottom: 24 }}>
+      {canEdit(admin?.role, "products") && <details style={{ marginBottom: 24 }}>
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>New product</summary>
         <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, marginTop: 12 }}>
           <label>
@@ -140,7 +142,7 @@ export default function AdminProductsPage() {
           </label>
           <button type="submit" className="btn btn-primary btn-sm">Create product</button>
         </form>
-      </details>
+      </details>}
       {error && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
 
       <label style={{ display: "block", marginBottom: 12 }}>

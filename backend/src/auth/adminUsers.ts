@@ -3,8 +3,10 @@ import { pool } from "../db/pool.js";
 export interface AdminUserRecord {
   id: string;
   email: string;
-  password_hash: string;
+  password_hash: string | null;
   name: string;
+  role: "Owner" | "Manager" | "Support" | "Packer";
+  active: boolean;
   last_login_at: string | null;
 }
 

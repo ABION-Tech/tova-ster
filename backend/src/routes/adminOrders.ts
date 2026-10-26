@@ -227,7 +227,9 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
         createdAt: r.created_at,
         verifiedAt: r.verified_at,
       })),
-      allowedNextStatuses: ALLOWED_TRANSITIONS[o.status] ?? [],
+      // Only the moves this person's role may make (Packers: pack, dispatch, deliver; Support: none).
+      allowedNextStatuses: (ALLOWED_TRANSITIONS[o.status] ?? []).filter((s) =>
+        admin.role === "Support" ? false : admin.role === "Packer" ? ["PROCESSING", "SHIPPED", "DELIVERED"].includes(s) : true),
     };
 
     return reply.send({ order });
@@ -258,6 +260,10 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
 
       if (!VALID_STATUSES.has(newStatus)) {
         return reply.status(400).send({ error: `Invalid status: ${newStatus}` });
+      }
+      // Packers move orders through packing and delivery only; cancelling and refunding is for Managers and the Owner.
+      if (admin.role === "Packer" && !["PROCESSING", "SHIPPED", "DELIVERED"].includes(newStatus)) {
+        return reply.status(403).send({ error: "Packers can mark orders packed, dispatched or delivered. Ask a manager to cancel or refund." });
       }
 
       const current = await pool.query<{ status: string }>(

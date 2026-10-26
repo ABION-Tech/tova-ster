@@ -75,6 +75,8 @@ function renderTemplate(template: string, data: Record<string, unknown>): string
       return adminNewOrderEmail(data);
     case "admin_low_stock":
       return adminLowStockEmail(data);
+    case "admin_invite":
+      return adminInviteEmail(data);
     default:
       return genericEmail(data);
   }
@@ -211,6 +213,27 @@ function passwordResetEmail(data: Record<string, unknown>): string {
        <a href="${esc(link)}" style="color:${BRAND_GOLD};word-break:break-all;">${esc(link)}</a>
      </p>
      <p style="color:${BRAND_MUTED};font-size:12px;margin-top:16px;">If you didn't request a reset, no action is needed — your password hasn't changed.</p>`,
+  );
+}
+
+function adminInviteEmail(data: Record<string, unknown>): string {
+  const name = str(data, "name", "there");
+  const role = str(data, "role");
+  const by = str(data, "invitedBy", "The Tova-Ster owner");
+  const link = str(data, "link");
+  return shell(
+    "You're invited to the Tova-Ster admin",
+    `<h1 style="font-size:22px;margin:0 0 16px;">Join the Tova-Ster team</h1>
+     <p style="color:${BRAND_MUTED};line-height:1.6;margin:0 0 24px;">
+       Hi ${esc(name)}, ${esc(by)} has added you to the shop admin as <b>${esc(role)}</b>.
+       Choose your password to get started. The link works once and expires in 48 hours.
+     </p>
+     <div style="text-align:center;">${btn(link, "Choose my password")}</div>
+     <p style="color:${BRAND_MUTED};font-size:13px;margin-top:24px;">
+       Or copy this link:<br>
+       <a href="${esc(link)}" style="color:${BRAND_GOLD};word-break:break-all;">${esc(link)}</a>
+     </p>
+     <p style="color:${BRAND_MUTED};font-size:12px;margin-top:16px;">If you weren't expecting this, ignore this email.</p>`,
   );
 }
 

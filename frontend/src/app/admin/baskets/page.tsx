@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminJson } from "../../../lib/backend";
+import { canEdit, useAdmin } from "../../../lib/admin/AdminContext";
 
 interface Basket { id: string; email: string | null; name: string | null; guest: boolean; postcode: string | null; can_email: boolean; last_activity_at: string; value: number; items: { name: string; qty: number; sub: boolean }[] | null }
 interface Report { hours: number; days: number; count: number; value: number; contactable: number; baskets: Basket[] }
@@ -14,6 +15,8 @@ const ago = (t: string) => {
 };
 
 export default function BasketsAdmin() {
+  const { admin } = useAdmin();
+  const mayEdit = canEdit(admin?.role, "products");
   const [days, setDays] = useState(30);
   const [rep, setRep] = useState<Report | null>(null);
   const [hours, setHours] = useState<number | null>(null);
@@ -53,9 +56,9 @@ export default function BasketsAdmin() {
             <select style={{ ...inp, width: 140 }} value={days} onChange={(e) => setDays(Number(e.target.value))}>
               {[7, 30, 90].map((d) => <option key={d} value={d}>{d} days</option>)}
             </select></label>
-          <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Abandoned after (hours untouched)
+          {mayEdit && <label style={{ display: "grid", gap: 4, fontSize: 13 }}>Abandoned after (hours untouched)
             <span style={{ display: "flex", gap: 8 }}><input style={inp} type="number" min={1} max={720} value={hours ?? ""} onChange={(e) => setHours(Number(e.target.value))} />
-              <button className="btn" onClick={saveHours} disabled={hours === rep.hours}>Save</button></span></label>
+              <button className="btn" onClick={saveHours} disabled={hours === rep.hours}>Save</button></span></label>}
         </div>
         <span style={{ fontSize: 13, color: "#6E685E" }}>A basket counts as abandoned when it has items, hasn&apos;t been checked out and nobody has touched it for {rep.hours} hours. &ldquo;We may email&rdquo; means the shopper agreed to marketing emails. Reminder emails start once Resend is connected.</span>
       </section>

@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       await adminJson("/admin/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-      router.push("/admin/products");
+      router.push("/admin");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {

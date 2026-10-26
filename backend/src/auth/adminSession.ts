@@ -46,7 +46,17 @@ export async function createAdminSession(
   reply.setCookie(ADMIN_SESSION_COOKIE, raw, adminCookieOptions(ADMIN_SESSION_TTL_MS));
 }
 
+// One lookup per request: the admin gate and the route handler share it.
+const seen = new WeakMap<FastifyRequest, AdminAuthUser | null>();
+
 export async function getAdminFromRequest(req: FastifyRequest): Promise<AdminAuthUser | null> {
+  if (seen.has(req)) return seen.get(req) ?? null;
+  const admin = await lookupAdmin(req);
+  seen.set(req, admin);
+  return admin;
+}
+
+async function lookupAdmin(req: FastifyRequest): Promise<AdminAuthUser | null> {
   const raw = req.cookies[ADMIN_SESSION_COOKIE];
   if (!raw) return null;
 
