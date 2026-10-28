@@ -39,6 +39,7 @@ export class ResendAdapter implements EmailProviderAdapter {
         to: [payload.to],
         subject: payload.subject,
         html,
+        ...(payload.headers ? { headers: payload.headers } : {}),
       }),
     });
 
@@ -86,7 +87,7 @@ const BRAND_GOLD = "#B8912B";
 const BRAND_DARK = "#241F19";
 const BRAND_MUTED = "#756A5C";
 
-function shell(title: string, body: string): string {
+function shell(title: string, body: string, unsubscribeUrl?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head>
@@ -100,6 +101,7 @@ function shell(title: string, body: string): string {
     </div>
     <div style="padding:20px 32px;background:#F3EEE3;text-align:center;font-size:12px;color:${BRAND_MUTED};">
       © ${new Date().getFullYear()} Tova-Ster · tova-ster.com · info@tova-ster.com
+      ${unsubscribeUrl ? `<br><a href="${esc(unsubscribeUrl)}" style="color:${BRAND_MUTED};text-decoration:underline;">Unsubscribe from marketing emails</a>` : ""}
     </div>
   </div>
 </body>
@@ -160,7 +162,8 @@ function birthdayEmail(data: Record<string, unknown>): string {
      <p style="color:${BRAND_MUTED};margin:0 0 16px;">From all of us at Tova-Ster, we hope you have a lovely day.</p>
      ${points > 0 ? `<p style="margin:0 0 8px;">We've added <strong>${points} points</strong> to your account, worth <strong>£${pounds.toFixed(2)}</strong> off your next order.</p>` : ""}
      ${btn(`${appUrl}/shop`, points > 0 ? "Treat yourself" : "Visit the shop")}
-     <p style="font-size:12px;color:${BRAND_MUTED};margin:16px 0 0;">You're getting this because you added your birthday to your Tova-Ster account. You can remove it in your account details at any time.</p>`,
+     <p style="font-size:12px;color:${BRAND_MUTED};margin:16px 0 0;">You're getting this because you added your birthday to your Tova-Ster account. You can remove it in your account details, or unsubscribe below.</p>`,
+    str(data, "unsubscribeUrl") || undefined,
   );
 }
 
@@ -174,7 +177,8 @@ function freebieEmail(data: Record<string, unknown>): string {
      <p style="color:${BRAND_MUTED};line-height:1.6;margin:0 0 8px;">${esc(str(data, "title"))}. Tap the button to download it. The link keeps working, so you can come back to it.</p>
      <div style="text-align:center;">${btn(link, "Download the guide")}</div>
      ${code ? `<p style="line-height:1.6;margin:8px 0 0;">As a thank you, use <b style="color:${BRAND_GOLD};">${esc(code)}</b> for ${esc(pct)}% off your first order at tova-ster.com.</p>` : ""}
-     <p style="color:${BRAND_MUTED};font-size:12px;margin-top:24px;">You're getting this because you asked for the guide and agreed to hear from us. Unsubscribe any time from the link in our emails.</p>`,
+     <p style="color:${BRAND_MUTED};font-size:12px;margin-top:24px;">You're getting this because you asked for the guide and agreed to hear from us. You can unsubscribe at any time using the link below.</p>`,
+    str(data, "unsubscribeUrl") || undefined,
   );
 }
 

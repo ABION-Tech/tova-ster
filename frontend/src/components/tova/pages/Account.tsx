@@ -57,6 +57,40 @@ function BirthdayPanel() {
   );
 }
 
+/** Delete my account: password to confirm. Personal details are erased; order records are kept for VAT. */
+function DeleteAccount() {
+  const { signOut, say } = useShop();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function go(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setErr(null);
+    try {
+      await api("/profile", { method: "DELETE", json: { password: pw } });
+      await signOut().catch(() => {});
+      say("Your account has been deleted.");
+      router.push("/");
+    } catch (x) { setErr(x instanceof Error ? x.message : "Couldn't delete your account."); } finally { setBusy(false); }
+  }
+  return (
+    <details className="acc" style={{ marginTop: 18 }} open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Delete my account</summary>
+      <div className="in" style={{ display: "grid", gap: 10 }}>
+        <p style={{ fontSize: 14, margin: 0 }}>This deletes your name, email, phone, birthday, saved addresses, reviews, reward points and browsing history, and signs you out. It can&apos;t be undone.
+          We keep the records of orders you paid for (without your name or email) because UK law requires sales and VAT records to be kept for six years.</p>
+        <form onSubmit={go} className="field" style={{ gap: 10 }}>
+          <label htmlFor="del-pw">Type your password to confirm</label>
+          <input id="del-pw" type="password" autoComplete="current-password" required value={pw} onChange={(e) => setPw(e.target.value)} />
+          {err && <p role="alert" style={{ color: "var(--sale)", fontSize: 14, margin: 0 }}>{err}</p>}
+          <div><button className="btn sm" style={{ background: "var(--sale)" }} disabled={busy || !pw}>{busy ? "Deleting…" : "Delete my account"}</button></div>
+        </form>
+      </div>
+    </details>
+  );
+}
+
 function SignIn({ next }: { next: string | null }) {
   const { store, signIn, signUp } = useShop();
   const router = useRouter();
@@ -209,8 +243,9 @@ export function Account({ next }: { next: string | null }) {
       <div className="panel"><h2>Details</h2>
         <p>{user.firstName} {user.lastName}<br />{user.email}</p>
         {store.features.birthday?.on && <BirthdayPanel />}
-        <p style={{ fontSize: 14, color: "var(--ink-2)" }}>To change your details or delete your account and data, email {store.business.email}.</p>
+        <p style={{ fontSize: 14, color: "var(--ink-2)" }}>To change your name or email, email {store.business.email}.</p>
         <button className="btn ghost sm" onClick={signOut}>Sign out</button>
+        <DeleteAccount />
       </div>
     </div></main>
   );

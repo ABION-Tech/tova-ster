@@ -74,6 +74,7 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
        ON CONFLICT (email) DO UPDATE SET consent_at = now(), unsubscribed_at = NULL, source = COALESCE(EXCLUDED.source, newsletter_subscribers.source)`,
       [e, source ?? null],
     );
+    await pool.query(`UPDATE users SET unsubscribed_at = NULL WHERE lower(email) = $1`, [e]); // signing up again re-consents
     await logEvent({ type: "newsletter", message: "Signed up to emails", meta: { source: source ?? null } });
     return reply.status(204).send();
   });
@@ -96,6 +97,7 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
        ON CONFLICT (email) DO UPDATE SET consent_at = now(), unsubscribed_at = NULL`,
       [e],
     );
+    await pool.query(`UPDATE users SET unsubscribed_at = NULL WHERE lower(email) = $1`, [e]);
     const appUrl = (process.env.APP_URL ?? "https://tova-ster.com").replace(/\/$/, "");
     const link = /^https:\/\//.test(f.freebie.fileUrl) ? f.freebie.fileUrl : `${appUrl}${f.freebie.fileUrl}`;
     const code = f.freebie.giveCode && f.welcome.on ? f.welcome.code : null;

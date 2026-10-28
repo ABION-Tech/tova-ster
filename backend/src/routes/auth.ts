@@ -51,7 +51,7 @@ function buildLink(path: string, params: Record<string, string>): string {
 async function welcomeNewCustomer(userId: string, marketingEmail: boolean, gaveBirthday = false): Promise<void> {
   const features = await getSetting("features");
   const bonus = features.rewards.on ? Math.max(0, Math.floor(Number(features.rewards.signup) || 0)) : 0;
-  await pool.query(`UPDATE users SET marketing_email = $2, points_balance = points_balance + $3 WHERE id = $1`, [userId, marketingEmail, bonus]);
+  await pool.query(`UPDATE users SET marketing_email = $2, unsubscribed_at = CASE WHEN $2 THEN NULL ELSE unsubscribed_at END, points_balance = points_balance + $3 WHERE id = $1`, [userId, marketingEmail, bonus]);
   if (bonus > 0) {
     await pool.query(`INSERT INTO points_ledger (user_id, delta, reason) VALUES ($1, $2, 'Welcome points for joining')`, [userId, bonus]);
   }

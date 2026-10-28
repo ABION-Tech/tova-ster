@@ -5,154 +5,71 @@ import Link from "next/link";
 import { adminJson } from "../../../lib/backend";
 
 interface AdminReview {
-  id: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  userId: string;
-  reviewerName: string;
-  rating: number;
-  title: string | null;
-  body: string | null;
-  status: string;
-  verifiedPurchase: boolean;
-  createdAt: string;
+  id: string; productId: string; productName: string; productSlug: string; userId: string; reviewerName: string;
+  rating: number; title: string | null; body: string | null; status: string; verifiedPurchase: boolean; createdAt: string;
 }
 
-const STARS = ["", "★", "★★", "★★★", "★★★★", "★★★★★"];
-const STATUS_TABS = ["all", "approved", "rejected"];
+const TABS: [string, string][] = [["all", "All"], ["approved", "Showing"], ["rejected", "Hidden"]];
 
 export default function AdminReviewsPage() {
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [reviews, setReviews] = useState<AdminReview[] | null>(null);
   const [total, setTotal] = useState(0);
   const [tab, setTab] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [updateError, setUpdateError] = useState<string | null>(null);
 
-  function load(status: string) {
-    setLoading(true);
-    setError(null);
-    adminJson<{ reviews: AdminReview[]; total: number }>(`/admin/reviews?status=${status}&limit=100`)
+  useEffect(() => {
+    setReviews(null);
+    adminJson<{ reviews: AdminReview[]; total: number }>(`/admin/reviews?status=${tab}&limit=100`)
       .then((d) => { setReviews(d.reviews); setTotal(d.total); })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }
+      .catch((e: Error) => setMsg(e.message));
+  }, [tab]);
 
-  useEffect(() => { load(tab); }, [tab]);
-
-  async function updateStatus(id: string, status: "approved" | "rejected") {
-    setUpdating(id);
-    setUpdateError(null);
+  async function setStatus(r: AdminReview, status: "approved" | "rejected") {
+    setUpdating(r.id); setMsg(null);
     try {
-      await adminJson(`/admin/reviews/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
-    } catch (e: unknown) {
-      setUpdateError(e instanceof Error ? e.message : "Update failed.");
-    } finally {
-      setUpdating(null);
-    }
+      await adminJson(`/admin/reviews/${r.id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+      setReviews((prev) => prev?.map((x) => (x.id === r.id ? { ...x, status } : x)) ?? null);
+      setMsg(status === "approved" ? `${r.reviewerName}'s review is showing again.` : `${r.reviewerName}'s review is hidden from the shop.`);
+    } catch (e) { setMsg(e instanceof Error ? e.message : "Couldn't update."); } finally { setUpdating(null); }
   }
 
   return (
-    <div>
-      <h1 className="display-3" style={{ marginBottom: 20 }}>Reviews</h1>
-
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        {STATUS_TABS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setTab(s)}
-            style={{
-              padding: "4px 14px",
-              border: `1px solid ${tab === s ? "var(--gold-deep)" : "var(--line)"}`,
-              borderRadius: 4,
-              background: tab === s ? "var(--gold-deep)" : "var(--surface)",
-              color: tab === s ? "var(--surface)" : "var(--ink-muted)",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: tab === s ? 600 : 400,
-              textTransform: "capitalize",
-            }}
-          >
-            {s}
-          </button>
-        ))}
-        <span style={{ marginLeft: 12, fontSize: 13, color: "var(--ink-muted)", lineHeight: "30px" }}>
-          {total} review{total !== 1 ? "s" : ""}
-        </span>
+    <>
+      <div className="ahead">
+        <div><h1>Reviews</h1><p>Only customers whose order was delivered can review, so every review is from a real buyer. Reviews show straight away; hide any that break the rules (offensive, personal details, or health claims).</p></div>
       </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }} role="tablist">
+        {TABS.map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} className={`btn sm${tab === v ? "" : " ghost"}`} onClick={() => setTab(v)}>{l}</button>)}
+        <span className="muted">{total} review{total === 1 ? "" : "s"}</span>
+      </div>
+      {msg && <p className="note" role="status">{msg}</p>}
 
-      {error && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
-      {updateError && <p style={{ color: "var(--danger-text)" }}>{updateError}</p>}
-      {loading && <p>Loading…</p>}
-
-      {!loading && reviews.length === 0 && (
-        <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>No reviews found.</p>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {reviews.map((review) => (
-          <div
-            key={review.id}
-            style={{
-              border: `1px solid ${review.status === "rejected" ? "#E3B4A4" : "var(--line)"}`,
-              borderRadius: 8,
-              padding: 16,
-              background: review.status === "rejected" ? "var(--danger-bg)" : "var(--surface)",
-              opacity: review.status === "rejected" ? 0.75 : 1,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-              <div>
-                <Link href={`/products/${review.productSlug}`} target="_blank" style={{ fontWeight: 700, fontSize: 14, color: "var(--gold-deep)" }}>
-                  {review.productName}
-                </Link>
-                <span style={{ fontSize: 12, color: "var(--ink-muted)", marginLeft: 8 }}>
-                  {review.reviewerName}
-                  {review.verifiedPurchase && (
-                    <span style={{ marginLeft: 6, color: "var(--success-text)", fontWeight: 600 }}>✓ Verified</span>
-                  )}
-                </span>
+      {!reviews ? <p className="muted">Loading…</p> : reviews.length === 0 ? <div className="acard"><p className="muted">No reviews here yet.</p></div> : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {reviews.map((r) => (
+            <div key={r.id} className="acard" style={{ opacity: r.status === "rejected" ? 0.7 : 1 }}>
+              <div className="ahead">
+                <div>
+                  <span style={{ color: "var(--gold)", fontSize: 16, letterSpacing: 2 }} aria-label={`${r.rating} out of 5 stars`}>{"★".repeat(r.rating)}<span style={{ color: "var(--line)" }}>{"★".repeat(5 - r.rating)}</span></span>
+                  <p style={{ margin: "2px 0 0", fontSize: 14 }}>
+                    <b>{r.reviewerName}</b>{r.verifiedPurchase && <span className="pill active" style={{ marginLeft: 8 }}>Verified buyer</span>}
+                    <span className="muted"> on <Link href={`/products/${r.productSlug}`} target="_blank">{r.productName}</Link>, {new Date(r.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span className={`pill ${r.status === "approved" ? "active" : "refunded"}`}>{r.status === "approved" ? "Showing" : "Hidden"}</span>
+                  {r.status === "approved"
+                    ? <button className="btn sm ghost" disabled={updating === r.id} onClick={() => setStatus(r, "rejected")}>Hide</button>
+                    : <button className="btn sm" disabled={updating === r.id} onClick={() => setStatus(r, "approved")}>Show again</button>}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <span style={{ fontSize: 11, color: review.status === "approved" ? "var(--success-text)" : "var(--danger-text)", fontWeight: 600, textTransform: "uppercase" }}>
-                  {review.status}
-                </span>
-                {review.status !== "approved" && (
-                  <button
-                    disabled={updating === review.id}
-                    onClick={() => updateStatus(review.id, "approved")}
-                    style={{ padding: "3px 10px", fontSize: 12, border: "1px solid var(--success-text)", color: "var(--success-text)", borderRadius: 4, cursor: "pointer", background: "var(--surface)" }}
-                  >
-                    Approve
-                  </button>
-                )}
-                {review.status !== "rejected" && (
-                  <button
-                    disabled={updating === review.id}
-                    onClick={() => updateStatus(review.id, "rejected")}
-                    style={{ padding: "3px 10px", fontSize: 12, border: "1px solid var(--danger-text)", color: "var(--danger-text)", borderRadius: 4, cursor: "pointer", background: "var(--surface)" }}
-                  >
-                    Reject
-                  </button>
-                )}
-              </div>
+              {r.title && <b style={{ fontSize: 15 }}>{r.title}</b>}
+              {r.body && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{r.body}</p>}
             </div>
-
-            <div style={{ color: "var(--gold)", fontSize: 16, marginBottom: 4 }}>{STARS[review.rating]}</div>
-            {review.title && <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{review.title}</p>}
-            {review.body && <p style={{ fontSize: 13, color: "var(--ink-muted)", lineHeight: 1.6 }}>{review.body}</p>}
-            <p style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 8 }}>
-              {new Date(review.createdAt).toLocaleString("en-NG")} · ID: {review.id}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

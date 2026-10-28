@@ -1,4 +1,6 @@
 import { logEvent, maskEmail } from "../../events/eventsRepo.js";
+import { pool } from "../../db/pool.js";
+import { MARKETING_TEMPLATES, oneClickUrl, unsubscribePageUrl } from "./unsubscribe.js";
 
 /**
  * EmailService — the ONLY thing business logic is allowed to call for any
@@ -12,6 +14,7 @@ export interface EmailPayload {
   subject: string;
   template: string; // branded template identifier, not raw HTML from callers
   data?: Record<string, unknown>;
+  headers?: Record<string, string>;
 }
 
 export interface EmailProviderAdapter {
@@ -23,6 +26,20 @@ export class EmailService {
 
   /** Sends, and records the send or the failure in the activity log (recipient masked). */
   async send(payload: EmailPayload, userId?: string | null) {
+    // Marketing emails: never to someone who unsubscribed, and always with an
+    // unsubscribe link in the footer plus the mail-app one-click headers.
+    if (MARKETING_TEMPLATES.has(payload.template)) {
+      const e = payload.to.trim().toLowerCase();
+      const off = await pool.query(
+        `SELECT 1 FROM users WHERE lower(email) = $1 AND unsubscribed_at IS NOT NULL
+         UNION ALL SELECT 1 FROM newsletter_subscribers WHERE lower(email) = $1 AND unsubscribed_at IS NOT NULL LIMIT 1`, [e]);
+      if (off.rowCount) return { id: "skipped-unsubscribed" };
+      payload = {
+        ...payload,
+        data: { ...(payload.data ?? {}), unsubscribeUrl: unsubscribePageUrl(e) },
+        headers: { ...(payload.headers ?? {}), "List-Unsubscribe": `<${oneClickUrl(e)}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      };
+    }
     const meta = { template: payload.template, to: maskEmail(payload.to), orderNumber: (payload.data?.orderNumber as string | undefined) ?? null };
     try {
       const out = await this.adapter.send(payload);

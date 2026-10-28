@@ -46,6 +46,36 @@ export const activityRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
     return reply.status(204).send();
   });
 
+  /**
+   * Sales funnel for the last N days (default 30): visits, product views,
+   * baskets started, checkouts started and paid orders. Visits and views only
+   * count shoppers who accepted analytics cookies; baskets, checkouts and
+   * orders count everyone, so the first two steps read low.
+   */
+  app.get("/admin/reports/funnel", async (req, reply) => {
+    if (!(await requireAdmin(req, reply))) return;
+    const days = Math.min(365, Math.max(1, Number((req.query as { days?: string }).days) || 30));
+    const r = await pool.query<{ visits: number; viewed: number; baskets: number; checkouts: number; paid: number; sales: number }>(
+      `WITH w AS (SELECT now() - make_interval(days => $1::int) AS since)
+       SELECT
+         (SELECT COUNT(DISTINCT session_id) FROM events, w WHERE type = 'visit' AND session_id IS NOT NULL AND created_at > w.since)::int AS visits,
+         (SELECT COUNT(DISTINCT session_id) FROM events, w WHERE type = 'view'  AND session_id IS NOT NULL AND created_at > w.since)::int AS viewed,
+         (SELECT COUNT(*) FROM carts, w WHERE first_item_at > w.since)::int AS baskets,
+         (SELECT COUNT(*) FROM orders, w WHERE created_at > w.since)::int AS checkouts,
+         (SELECT COUNT(*) FROM orders, w WHERE created_at > w.since AND status IN ('PAID','PROCESSING','SHIPPED','DELIVERED','REFUNDED'))::int AS paid,
+         (SELECT COALESCE(SUM(total), 0) FROM orders, w WHERE created_at > w.since AND status IN ('PAID','PROCESSING','SHIPPED','DELIVERED'))::float AS sales`,
+      [days]);
+    const f = r.rows[0]!;
+    const steps = [
+      { key: "visits", label: "Visited the shop", count: f.visits, cookieOnly: true },
+      { key: "viewed", label: "Looked at a product", count: f.viewed, cookieOnly: true },
+      { key: "baskets", label: "Added to basket", count: f.baskets, cookieOnly: false },
+      { key: "checkouts", label: "Started checkout", count: f.checkouts, cookieOnly: false },
+      { key: "paid", label: "Paid", count: f.paid, cookieOnly: false },
+    ];
+    return reply.send({ days, steps, sales: f.sales });
+  });
+
   /** Paid sales by where the buyer first came from (last N days, default 30). */
   app.get("/admin/reports/channels", async (req, reply) => {
     if (!(await requireAdmin(req, reply))) return;

@@ -36,6 +36,7 @@ export const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "GET /admin/baskets": MS,
   "GET /admin/activity": MS,
   "GET /admin/reports/channels": MS,
+  "GET /admin/reports/funnel": MS,
   "GET /admin/reports/searches": MS,
   // Products and stock
   "GET /admin/products": ALL,
@@ -101,6 +102,7 @@ export const AREAS: Record<string, string> = {
   growth: "GET /admin/newsletter",
   offers: "GET /admin/offers",
   emails: "PUT /admin/settings/:key",
+  quiz: "PUT /admin/settings/:key",
   activity: "GET /admin/activity",
   instagram: "GET /admin/instagram",
   team: "GET /admin/team",

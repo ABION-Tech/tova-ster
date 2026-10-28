@@ -1,5 +1,8 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { requireUser } from "../auth/session.js";
+import { destroySession, requireUser } from "../auth/session.js";
+import { findUserById } from "../auth/users.js";
+import { verifyPassword } from "../auth/passwords.js";
+import { eraseAccount } from "../auth/eraseAccount.js";
 import { updateUserProfile } from "../auth/users.js";
 import { pool } from "../db/pool.js";
 import { logEvent } from "../events/eventsRepo.js";
@@ -70,4 +73,20 @@ export const profileRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       });
     },
   );
+  // Customers delete their own account: password to confirm, then personal details are erased (see auth/eraseAccount.ts).
+  app.delete("/profile", { config: { rateLimit: { max: 5, timeWindow: "10 minutes" } } }, async (req, reply) => {
+    const user = await requireUser(req, reply);
+    if (!user) return;
+    const { password } = (req.body ?? {}) as { password?: string };
+    const record = await findUserById(user.id);
+    if (!record || !password || !(await verifyPassword(password, record.password_hash))) {
+      return reply.status(400).send({ error: "That password isn't right." });
+    }
+    const r = await eraseAccount(user.id);
+    if (!r.ok) {
+      return reply.status(409).send({ error: `You have an order on its way (${r.orders.join(", ")}). Once it's delivered you can delete your account, or email info@tova-ster.com and we'll help.` });
+    }
+    await destroySession(req, reply);
+    return reply.send({ ok: true });
+  });
 };

@@ -33,6 +33,7 @@ const NAV: { group: string; links: { href: string; label: string; area: string }
     { href: "/admin/growth", label: "Growth tools", area: "growth" },
     { href: "/admin/emails", label: "Emails", area: "emails" },
     { href: "/admin/offers", label: "Bundles & codes", area: "offers" },
+    { href: "/admin/quiz", label: "Quiz", area: "quiz" },
     { href: "/admin/instagram", label: "Instagram", area: "instagram" },
   ] },
   { group: "Setup", links: [

@@ -1,5 +1,6 @@
 "use client";
 
+import { Funnel } from "../../../components/admin/Funnel";
 import { useEffect, useState } from "react";
 import { adminJson } from "../../../lib/backend";
 
@@ -121,6 +122,8 @@ export default function GrowthAdmin() {
         <label style={{ ...lab, maxWidth: 260 }}>Birthday points{features.rewards.on ? "" : " (reward points are off)"}<input style={inp} type="number" min={0} max={5000} step={50} value={features.birthday.points} disabled={!features.birthday.on || !features.rewards.on} onChange={(e) => { setFeatures({ ...features, birthday: { ...features.birthday, points: num(e.target.value, 0, 5000, 200) } }); setDirty(true); }} /></label>
         <span style={{ fontSize: 13, color: "#6E685E" }}>Sent once a year on the customer&apos;s birthday (UK date) with a birthday email. 29 February birthdays are celebrated on 28 February in other years.</span>
       </section>
+
+      <Funnel />
 
       <section style={box}>
         <b>Where paying customers came from (last 30 days)</b>

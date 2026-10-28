@@ -61,7 +61,7 @@ export const reviewRoutes: FastifyPluginAsync = async (app: FastifyInstance) => 
       try {
         const review = await createReview({ productId, userId: user.id, rating, title, body });
         const prod = await pool.query<{ name: string }>(`SELECT name FROM products WHERE id = $1`, [productId]);
-        await logEvent({ type: "review", message: `Posted a ${rating}-star review of ${prod.rows[0]?.name ?? "a product"} (waiting for approval)`, userId: user.id, meta: { productId, rating } });
+        await logEvent({ type: "review", message: `Posted a ${rating}-star review of ${prod.rows[0]?.name ?? "a product"}`, userId: user.id, meta: { productId, rating } });
         return reply.status(201).send({ review });
       } catch (err) {
         if (err instanceof ReviewError) return reply.status(400).send({ error: err.message });
