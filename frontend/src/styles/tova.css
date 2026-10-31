@@ -946,3 +946,38 @@ fieldset.bday legend { font-size: 14px; font-weight: 600; padding: 0; margin-bot
 .bday .fields { grid-template-columns: 1fr 1.6fr; }
 .hint { font-size: 13px; color: var(--ink-3); margin: 0; }
 .bday-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; font-size: 15px; }
+
+/* ── Launching-soon page (tova-ster.com before launch) ── */
+.soon { min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--ui); display: flex; flex-direction: column; }
+.soon-top { padding: 20px var(--gutter); border-bottom: 1px solid var(--line); }
+.soon-top .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); }
+.soon-top .logo img { height: 34px; width: auto; }
+.soon-top .logo b { letter-spacing: .14em; font-size: 15px; }
+.soon-hero { width: 100%; max-width: var(--max); margin: 0 auto; padding: 48px var(--gutter); display: grid; gap: 36px; align-items: center; }
+@media (min-width: 900px) { .soon-hero { grid-template-columns: 1.05fr 1fr; padding-top: 72px; padding-bottom: 72px; gap: 64px; } }
+.soon-kicker { color: var(--gold-ink); font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 14px; }
+.soon h1 { font-family: var(--display); font-weight: 500; font-size: clamp(32px, 4.4vw, 54px); line-height: 1.08; margin: 0 0 18px; text-wrap: balance; }
+.soon-lede { font-size: 18px; line-height: 1.55; color: var(--ink-2); margin: 0 0 28px; max-width: 34em; }
+.soon-photo { border-radius: var(--r-lg); overflow: hidden; background: var(--surface); aspect-ratio: 4 / 5; }
+.soon-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 88% 50%; display: block; }
+.soon-form { max-width: 540px; }
+.soon-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.soon-row input { flex: 1 1 220px; min-height: 46px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line); font: inherit; font-size: 16px; background: #fff; color: var(--ink); }
+.soon-row input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.soon-row .btn { flex: 0 0 auto; }
+@media (max-width: 480px) { .soon-row .btn { flex: 1 1 100%; } }
+.soon-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 14px; color: var(--ink-2); line-height: 1.45; cursor: pointer; }
+.soon-consent input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--black); flex: none; }
+.soon-error { color: var(--sale); font-size: 14px; margin: 10px 0 0; }
+.soon-done { background: var(--good-soft); color: var(--good); padding: 14px 18px; border-radius: var(--r); font-weight: 600; max-width: 540px; margin: 0; }
+.soon-range { width: 100%; max-width: var(--max); margin: 0 auto; padding: 8px var(--gutter) 64px; }
+.soon-range h2 { font-family: var(--display); font-weight: 500; font-size: 26px; margin: 0 0 20px; }
+.soon-range ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 760px) { .soon-range ul { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.soon-range li span { display: block; margin-top: 10px; font-size: 15px; font-weight: 600; line-height: 1.3; }
+.soon-well { background: var(--surface); border-radius: var(--r); aspect-ratio: 1; overflow: hidden; }
+.soon-well img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.soon-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 22px var(--gutter); display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 14px; color: var(--ink-2); }
+.soon-foot a { color: var(--ink); }
+.soon-foot span { margin-left: auto; }
+@media (max-width: 600px) { .soon-foot span { margin-left: 0; width: 100%; } }
