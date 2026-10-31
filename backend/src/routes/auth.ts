@@ -56,6 +56,15 @@ async function welcomeNewCustomer(userId: string, marketingEmail: boolean, gaveB
     await pool.query(`INSERT INTO points_ledger (user_id, delta, reason) VALUES ($1, $2, 'Welcome points for joining')`, [userId, bonus]);
   }
   await logEvent({ type: "signup", message: "New account created", userId, meta: { marketingEmail, birthday: gaveBirthday } });
+  const emails = await getSetting("emails");
+  if (emails.welcome) {
+    const u = await pool.query<{ email: string; first_name: string }>(`SELECT email, first_name FROM users WHERE id = $1`, [userId]);
+    const base = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    if (u.rows[0]) emailService.send({ to: u.rows[0].email, subject: "Welcome to Tova-Ster", template: "welcome", data: {
+      firstName: u.rows[0].first_name, points: bonus, minRedeem: features.rewards.on ? Number(features.rewards.minRedeem) || 500 : 0,
+      shopLink: `${base}/shop`, quizLink: `${base}/quiz`,
+    } }, userId).catch(() => { /* recorded as a failed email */ });
+  }
 }
 
 export const authRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {

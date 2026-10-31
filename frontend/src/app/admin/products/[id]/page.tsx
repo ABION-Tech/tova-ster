@@ -19,6 +19,7 @@ interface ProductImage {
   url: string;
   product_variant_id: string | null;
   is_primary: boolean;
+  alt_text?: string | null;
 }
 
 interface Product {
@@ -360,6 +361,13 @@ function ImagesSection({
     e.target.value = "";
   }
 
+  async function makeMain(imageId: string) {
+    await withError(async () => {
+      await adminJson(`/admin/products/${product.id}/images/${imageId}`, { method: "PATCH", body: JSON.stringify({ isPrimary: true }) });
+      await onChanged();
+    });
+  }
+
   async function handleDelete(imageId: string) {
     if (!confirm("Delete this image?")) return;
     await withError(async () => {
@@ -373,20 +381,22 @@ function ImagesSection({
       <h2>Images</h2>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         {product.images.map((img) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <div key={img.id} style={{ position: "relative" }}>
-            <img src={img.url} alt="" width={120} height={120} style={{ objectFit: "cover", borderRadius: 4 }} />
-            <button onClick={() => handleDelete(img.id)} className="btn btn-outline btn-sm" style={{ display: "block", marginTop: 4, width: "100%", color: "var(--danger-text)" }}>
-              Delete
-            </button>
+          <div key={img.id} style={{ width: 132, display: "grid", gap: 4 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={img.url} alt={img.alt_text ?? ""} width={132} height={132} style={{ objectFit: "cover", borderRadius: 8, border: img.is_primary ? "2px solid var(--gold)" : "1px solid var(--line)" }} />
+            {img.is_primary
+              ? <span className="pill active" style={{ justifySelf: "start" }}>Main photo</span>
+              : <button onClick={() => makeMain(img.id)} className="btn btn-outline btn-sm">Make main</button>}
+            <button onClick={() => handleDelete(img.id)} className="btn btn-outline btn-sm" style={{ color: "var(--danger-text)" }}>Delete</button>
           </div>
         ))}
       </div>
-      <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} />
-      {uploading && <p>Uploading…</p>}
+      <label className="btn btn-sm" style={{ cursor: uploading ? "wait" : "pointer" }}>
+        {uploading ? "Uploading…" : "Add a photo"}
+        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} disabled={uploading} style={{ display: "none" }} />
+      </label>
       <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>
-        Requires <code>CLOUDINARY_*</code> env vars to be set on the backend — uploads will fail with a clear error
-        otherwise.
+        JPG, PNG or WebP, up to 5 MB. Only use the client&apos;s own product photos. Square photos on a plain background look best.
       </p>
     </div>
   );

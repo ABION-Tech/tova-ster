@@ -28,6 +28,7 @@ import { settingsRoutes } from "./routes/settings.js";
 import { adminOfferRoutes } from "./routes/adminOffers.js";
 import { activityRoutes } from "./routes/activity.js";
 import { catalogueRoutes } from "./routes/catalogue.js";
+import { mediaRoutes } from "./routes/media.js";
 import { unsubscribeRoutes } from "./routes/unsubscribe.js";
 import { meRoutes } from "./routes/me.js";
 import { instagramRoutes } from "./routes/instagram.js";
@@ -100,6 +101,7 @@ await app.register(activityRoutes);
 await app.register(catalogueRoutes);
 await app.register(meRoutes);
 await app.register(unsubscribeRoutes);
+await app.register(mediaRoutes);
 await app.register(instagramRoutes);
 
 return app;

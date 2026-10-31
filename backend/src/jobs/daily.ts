@@ -2,6 +2,9 @@ import { pool } from "../db/pool.js";
 import { getSetting } from "../settings/settingsRepo.js";
 import { logEvent, purgeOldBrowsingEvents } from "../events/eventsRepo.js";
 import { emailService } from "../services/email/index.js";
+import { runTimedEmails } from "./emails.js";
+import { runRenewals } from "../subscriptions/renewals.js";
+import { sendPaidOrders, syncFromClickAndDrop } from "../shipping/clickAndDrop.js";
 
 /** Today's date in the UK, whatever the server's time zone. */
 function ukToday(now = new Date()) {
@@ -51,6 +54,20 @@ export async function runRetention(): Promise<number> {
 export function startDailyJobs(log: { error: (o: unknown, m: string) => void; info: (m: string) => void }) {
   const run = async () => {
     try { const n = await runBirthdayTreats(); if (n) log.info(`Birthday treats sent: ${n}`); } catch (err) { log.error(err, "birthday treats failed"); }
+    try {
+      const r = await runRenewals(new Date(), log);
+      if (r.charged || r.failed || r.deferred) log.info(`Subscription renewals: ${JSON.stringify(r)}`);
+    } catch (err) { log.error(err, "subscription renewals failed"); }
+    try {
+      const sent = await sendPaidOrders();
+      const synced = await syncFromClickAndDrop();
+      if (sent || synced) log.info(`Click & Drop: ${sent} sent, ${synced} updated`);
+    } catch (err) { log.error(err, "Click & Drop sync failed"); }
+    try {
+      const sent = await runTimedEmails();
+      const total = Object.values(sent).reduce((a, b) => a + b, 0);
+      if (total) log.info(`Timed emails sent: ${JSON.stringify(sent)}`);
+    } catch (err) { log.error(err, "timed emails failed"); }
     try { const n = await runRetention(); if (n) log.info(`Old browsing records deleted: ${n}`); } catch (err) { log.error(err, "retention clean-up failed"); }
   };
   setTimeout(run, 15_000).unref();

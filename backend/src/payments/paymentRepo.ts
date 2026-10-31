@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { getSetting } from "../settings/settingsRepo.js";
 import { pool } from "../db/pool.js";
+import { paymentService } from "../services/payment/index.js";
 
 export class PaymentFlowError extends Error {}
 
@@ -170,8 +171,8 @@ async function completePaidOrder(client: PoolClient, orderId: string): Promise<v
   const o = await client.query<{
     order_number: string; user_id: string | null; guest_email: string | null; total: string; cart_id: string | null;
     points_used: number; points_earned: number; discount_code: string | null;
-    source: Record<string, unknown> | null;
-  }>(`SELECT order_number, user_id, guest_email, total, cart_id, points_used, points_earned, discount_code, source FROM orders WHERE id = $1`, [orderId]);
+    source: Record<string, unknown> | null; renewal_key: string | null; shipping_address_id: string | null;
+  }>(`SELECT order_number, user_id, guest_email, total, cart_id, points_used, points_earned, discount_code, source, renewal_key, shipping_address_id FROM orders WHERE id = $1`, [orderId]);
   const order = o.rows[0];
   if (!order) return;
 
@@ -213,13 +214,19 @@ async function completePaidOrder(client: PoolClient, orderId: string): Promise<v
     `SELECT product_id, product_name_snapshot, quantity, subscription_months, unit_price FROM order_items WHERE order_id = $1 AND subscription_months IS NOT NULL`,
     [orderId],
   );
-  if (subs.rows.length) {
+  // A renewal order is the subscription itself coming round again: it doesn't start new ones.
+  if (subs.rows.length && !order.renewal_key) {
     const email = order.guest_email ?? (await client.query<{ email: string }>(`SELECT email FROM users WHERE id = $1`, [order.user_id])).rows[0]?.email;
+    // The card the payment provider saved for renewals (Stripe keeps the card; we keep its ids).
+    const pay = await client.query<{ raw_payload: unknown }>(`SELECT raw_payload FROM payments WHERE order_id = $1 AND status = 'success' ORDER BY verified_at DESC NULLS LAST LIMIT 1`, [orderId]);
+    const saved = paymentService.savedMethod(pay.rows[0]?.raw_payload);
     for (const s of subs.rows) {
       await client.query(
-        `INSERT INTO subscriptions (user_id, email, product_id, product_name, quantity, interval_months, unit_price, status, next_charge_at, source_order_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', now() + make_interval(months => $6), $8)`,
-        [order.user_id, email ?? "", s.product_id, s.product_name_snapshot, s.quantity, s.subscription_months, s.unit_price, orderId],
+        `INSERT INTO subscriptions (user_id, email, product_id, product_name, quantity, interval_months, unit_price, status, next_charge_at, source_order_id,
+                                    provider_customer_id, payment_method_id, shipping_address_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', now() + make_interval(months => $6), $8, $9, $10, $11)`,
+        [order.user_id, email ?? "", s.product_id, s.product_name_snapshot, s.quantity, s.subscription_months, s.unit_price, orderId,
+          saved?.customerId ?? null, saved?.paymentMethodId ?? null, order.shipping_address_id],
       );
     }
   }

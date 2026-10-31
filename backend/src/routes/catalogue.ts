@@ -26,10 +26,13 @@ export const catalogueRoutes: FastifyPluginAsync = async (app: FastifyInstance) 
        ORDER BY p.sort_order, p.created_at`,
     );
     const under = s.features.stockUrgency.on ? Number(s.features.stockUrgency.under) : 0;
+    // Sold out with "hide when sold out" on: kept out of listings, search and
+    // the quiz (hidden), but the product page still opens, says it's out of
+    // stock and offers "tell me when it's back" (no dead links from emails or Google).
     const products = r.rows
-      .filter((p) => !(hideOOS && (p.status === "out_of_stock" || (p.stock !== null && p.stock <= 0))))
       .map(({ stock, was_price, ...p }) => ({
         ...p,
+        hidden: Boolean(hideOOS && (p.status === "out_of_stock" || (stock !== null && stock <= 0))),
         wasPrice: was_price > p.price ? was_price : null,
         inStock: p.status === "active" && (stock === null || stock > 0),
         onlyLeft: stock !== null && stock > 0 && stock < under ? stock : null,

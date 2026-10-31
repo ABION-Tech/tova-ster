@@ -15,13 +15,13 @@ const ROWS: { key: keyof Emails; title: string; text: string; when: "live" | "so
   { key: "delivered", title: "Order delivered", text: "When the order is marked delivered.", when: "live" },
   { key: "adminNewOrder", title: "Team: new order", text: "Emails the team when an order is paid.", when: "live" },
   { key: "adminLowStock", title: "Team: low stock", text: "Emails the team when a sale takes a product down to its alert level.", when: "live" },
-  { key: "welcome", title: "Welcome", text: "After someone creates an account.", when: "soon" },
-  { key: "basket", title: "Basket reminders", text: "To shoppers who agreed to emails and left items in their basket.", when: "soon" },
-  { key: "subReminder", title: "Subscription reminder", text: "A few days before each subscription delivery.", when: "soon" },
-  { key: "points", title: "Points update", text: "When points are earned or about to be useful.", when: "soon" },
-  { key: "review", title: "Review request", text: "After delivery, asking for a review.", when: "soon" },
-  { key: "backInStock", title: "Back in stock", text: "To people who asked to be told.", when: "soon" },
-  { key: "winback", title: "We miss you", text: "To customers who haven't ordered for a while.", when: "soon" },
+  { key: "welcome", title: "Welcome", text: "Straight after someone creates an account, with their sign-up points and the vitamin finder.", when: "live" },
+  { key: "basket", title: "Basket reminders", text: "To shoppers who agreed to emails and left items in their basket. Stops once they buy. The code goes in the last reminder and is one-use, for 7 days.", when: "live" },
+  { key: "subReminder", title: "Subscription reminder", text: "A few days before each subscription charge and delivery (the days are set under Dispatch), with a link to skip or change it.", when: "live" },
+  { key: "points", title: "Points update", text: "At most once a month, to customers who agreed to emails and have enough points to spend.", when: "live" },
+  { key: "review", title: "Review request", text: "Three days after delivery, for products the customer hasn't reviewed yet.", when: "live" },
+  { key: "backInStock", title: "Back in stock", text: "Once, to people who asked on a sold-out product page. Their address is then dropped.", when: "live" },
+  { key: "winback", title: "We miss you", text: "Once per customer per last order, to those who agreed to emails, have no active subscription and haven't ordered for a while.", when: "live" },
 ];
 
 export default function EmailsAdmin() {

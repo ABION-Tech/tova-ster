@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { STATUS } from "../../../../lib/admin/status";
 import { adminJson } from "../../../../lib/backend";
+import { RefundPanel, type RefundRow } from "../../../../components/admin/RefundPanel";
 
 interface AdminOrderDetail {
   id: string;
@@ -53,10 +54,15 @@ interface AdminOrderDetail {
     verifiedAt: string | null;
   }[];
   allowedNextStatuses: string[];
+  refunds: RefundRow[];
+  shipping?: { clickAndDropId: string | null; problem: string | null; tracking: string | null; carrier: string | null };
+  subscriptionRenewal?: boolean;
+  refundedAmount: number;
+  refundable: number;
 }
 
 const STATUS_LABELS: Record<string, string> = Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, v[0]]));
-const ACTION: Record<string, string> = { PROCESSING: "Mark packed", SHIPPED: "Mark dispatched", DELIVERED: "Mark delivered", CANCELLED: "Cancel order", REFUNDED: "Mark refunded" };
+const ACTION: Record<string, string> = { PROCESSING: "Mark packed", SHIPPED: "Mark dispatched", DELIVERED: "Mark delivered", CANCELLED: "Cancel order" };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
   initiated: "#8A5A17",
@@ -218,8 +224,11 @@ export default function AdminOrderDetailPage() {
         <section style={card}>
           <h2 style={cardTitle}>Update status</h2>
           <p style={{ fontSize: 13, marginBottom: 10 }}>
-            Current: <b>{STATUS_LABELS[order.status] ?? order.status}</b>
+            Current: <b>{STATUS_LABELS[order.status] ?? order.status}</b>{order.subscriptionRenewal ? " · Subscribe & Save renewal" : ""}
           </p>
+          {order.shipping?.tracking && <p style={{ fontSize: 13, margin: "0 0 8px" }}>Tracking: <b>{order.shipping.carrier ?? ""} {order.shipping.tracking}</b></p>}
+          {order.shipping?.clickAndDropId && <p style={{ fontSize: 13, margin: "0 0 8px" }}>In Royal Mail Click &amp; Drop (order {order.shipping.clickAndDropId}). Print the label there; tracking and dispatch come back here automatically.</p>}
+          {order.shipping?.problem && <p className="note" style={{ fontSize: 13, margin: "0 0 8px" }}>Click &amp; Drop refused this order: {order.shipping.problem}. Fix the address and it will be tried again within a few hours.</p>}
           {order.allowedNextStatuses.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>Nothing more to do on this order for your role.</p>
           ) : (
@@ -236,8 +245,8 @@ export default function AdminOrderDetailPage() {
                 <button
                   key={s}
                   disabled={updatingStatus}
-                  onClick={() => { if (["CANCELLED", "REFUNDED"].includes(s) && !confirm(`${ACTION[s]}? This can't be undone.`)) return; handleStatusUpdate(s); }}
-                  className={`btn sm${["CANCELLED", "REFUNDED"].includes(s) ? " ghost" : ""}`}
+                  onClick={() => { if (s === "CANCELLED" && !confirm(order.status === "PENDING_PAYMENT" ? "Cancel this unpaid order?" : `Cancel and refund ${fmt(order.refundable || order.total)} to the customer? This can't be undone.`)) return; handleStatusUpdate(s); }}
+                  className={`btn sm${s === "CANCELLED" ? " ghost" : ""}`}
                   style={{ justifyContent: "flex-start" }}
                 >
                   {ACTION[s] ?? s}
@@ -251,6 +260,11 @@ export default function AdminOrderDetailPage() {
             </p>
           )}
         </section>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <RefundPanel key={`${order.status}-${order.refundedAmount}`} orderId={order.id} status={order.status} total={order.total} refundable={order.refundable} refunds={order.refunds ?? []}
+          onDone={async (msg) => { const u = await adminJson<{ order: AdminOrderDetail }>(`/admin/orders/${id}`); setOrder(u.order); setStatusMsg(msg); }} />
       </div>
 
       <p style={{ marginTop: 16, fontSize: 12, color: "var(--ink-faint)" }}>

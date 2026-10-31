@@ -26,8 +26,8 @@ export function Home() {
   const tabList = tab === "best" ? best
     : tab === "new" ? [...live].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5)
     : [...new Set([...live.filter((p) => p.format === "Gummies"), ...live.filter((p) => p.audiences.includes("kids"))])].slice(0, 5);
-  const recentProducts = recent.map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => !!p).slice(0, 5);
-  const quizSet = (quiz.productSlugs ?? []).map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => !!p);
+  const recentProducts = recent.map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => !!p && !p.hidden).slice(0, 5);
+  const quizSet = (quiz.productSlugs ?? []).map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => !!p && !p.hidden);
 
   async function signup(e: FormEvent) {
     e.preventDefault();

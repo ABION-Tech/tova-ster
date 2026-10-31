@@ -7,6 +7,7 @@ import { ProductCard } from "../ProductCard";
 import { ProductArt } from "../ProductArt";
 import { Icon } from "../Icons";
 import { Loading } from "../Loading";
+import { BackInStock } from "../BackInStock";
 import { cutoffText, freqLabel, gbp, gbpShort, needOf, round2, shopHref, stockState, subPrice } from "../../../lib/tova/shop";
 
 function Cutoff({ hour }: { hour: number }) {
@@ -136,6 +137,7 @@ export function ProductPage({ slug }: { slug: string }) {
             </div>
             <button className="btn" disabled={s === "out" || cartBusy} onClick={buy}>{s === "out" ? "Out of stock" : `Add to basket, ${gbp(unit * qty)}`}</button>
           </div>
+          {s === "out" && <BackInStock slug={p.slug} name={p.name} />}
           <div className="assure">
             <div><Icon.truck /><Cutoff hour={store.delivery.cutoffHour} /></div>
             {f.rewards.on && <div><Icon.star /><span>Earn <b>{Math.floor(unit * qty) * f.rewards.earn} points</b> with this order</span></div>}
@@ -174,7 +176,9 @@ export function ProductPage({ slug }: { slug: string }) {
       )}
 
       <section className="sec"><div className="sec-head"><h2>{recent.length > 1 ? "You may also like, and recently viewed" : "You may also like"}</h2></div><div className="grid">{also.map((x) => <ProductCard key={x.id} p={x} />)}</div></section>
-      <div className="sticky-buy"><div><b>{p.name}</b><div className="num">{gbp(unit)}</div></div><button className="btn" disabled={s === "out" || cartBusy} onClick={buy}>Add to basket</button></div>
+      <div className="sticky-buy"><div><b>{p.name}</b><div className="num">{gbp(unit)}</div></div>{s === "out"
+        ? <button className="btn ghost" onClick={() => document.querySelector<HTMLInputElement>('form[aria-label="Tell me when it\'s back"] input')?.focus()}>Email me when back</button>
+        : <button className="btn" disabled={cartBusy} onClick={buy}>Add to basket</button>}</div>
     </main>
   );
 }

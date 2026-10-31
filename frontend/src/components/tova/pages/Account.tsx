@@ -13,7 +13,7 @@ import { api, orderApi } from "../../../lib/tova/api";
 import { freqLabel, gbp } from "../../../lib/tova/shop";
 import type { Receipt } from "../../../lib/tova/types";
 
-interface Sub { id: string; product_name: string; quantity: number; interval_months: number; unit_price: number; status: string; next_charge_at: string; slug: string | null; image: string | null }
+interface Sub { id: string; product_name: string; quantity: number; interval_months: number; unit_price: number; status: string; next_charge_at: string; slug: string | null; image: string | null; has_card?: boolean; failed_attempts?: number; }
 interface Order { orderNumber: string; status: string; total: number; placedAt: string; itemCount: number; stage: string; trackingNumber: string | null; carrier: string | null }
 
 const STAGE: Record<string, [string, string]> = {
@@ -166,6 +166,17 @@ export function Account({ next }: { next: string | null }) {
   }, []);
   useEffect(() => { if (user) { load(); refreshCart(); } }, [user, load, refreshCart]);
 
+  // Back from the card page: save the new card for Subscribe & Save.
+  useEffect(() => {
+    if (!user) return;
+    const ref = new URLSearchParams(window.location.search).get("card_ref");
+    if (!ref) return;
+    window.history.replaceState(null, "", "/account");
+    api<{ updated: number }>("/me/subscriptions/card/finish", { method: "POST", json: { ref } })
+      .then(() => { say("Card saved. Your subscription is back on."); load(); })
+      .catch((e) => say(e instanceof Error ? e.message : "The card wasn't saved."));
+  }, [user, load, say]);
+
   if (!store || !userReady) return <Loading />;
   if (!user) return <SignIn next={next} />;
   const f = store.features;
@@ -179,6 +190,11 @@ export function Account({ next }: { next: string | null }) {
       say({ skip: "Next delivery skipped", pause: "Subscription paused", resume: "Subscription resumed", cancel: "Subscription cancelled" }[action]);
       load();
     } catch (e) { say(e instanceof Error ? e.message : "Please try again."); }
+  }
+
+  async function updateCard() {
+    try { const r = await api<{ url: string }>("/me/subscriptions/card", { method: "POST" }); window.location.href = r.url; }
+    catch (e) { say(e instanceof Error ? e.message : "Please try again."); }
   }
 
   if (receipt) return (
@@ -214,8 +230,9 @@ export function Account({ next }: { next: string | null }) {
             <div className="subrow" key={s.id}>
               <div className="im"><ProductArt slug={s.slug ?? ""} name={s.product_name} image={s.image} alt="" /></div>
               <div><b>{s.product_name}{s.quantity > 1 ? ` × ${s.quantity}` : ""}</b>
-                <div style={{ fontSize: 14, color: "var(--ink-2)" }}>Every {freqLabel(s.interval_months)}, {gbp(s.unit_price * s.quantity)}. {s.status === "active" ? `Next delivery ${day(s.next_charge_at)}` : s.status === "paused" ? "Paused" : "Payment needs attention"}</div></div>
+                <div style={{ fontSize: 14, color: "var(--ink-2)" }}>Every {freqLabel(s.interval_months)}, {gbp(s.unit_price * s.quantity)}. {s.status === "active" ? `Next delivery ${day(s.next_charge_at)}` : s.status === "paused" && !s.failed_attempts ? "Paused" : "Payment needs attention: please update your card"}</div></div>
               <div className="acts">
+                {(s.failed_attempts || s.has_card === false) ? <button className="btn sm" onClick={updateCard}>Update card</button> : null}
                 <button className="btn ghost sm" disabled={s.status !== "active"} onClick={() => subAction(s.id, "skip")}>Skip next</button>
                 <button className="btn ghost sm" onClick={() => subAction(s.id, s.status === "active" ? "pause" : "resume")}>{s.status === "active" ? "Pause" : "Resume"}</button>
                 <button className="btn ghost sm" onClick={() => subAction(s.id, "cancel")}>Cancel</button>

@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { paymentService, paymentProvider } from "../services/payment/index.js";
 import { TestPayAdapter } from "../services/payment/TestPayAdapter.js";
-import { emailService } from "../services/email/index.js";
 import {
   getOrderForPayment,
   getCustomerEmail,
@@ -14,7 +13,7 @@ import {
 } from "../payments/paymentRepo.js";
 import { pool } from "../db/pool.js";
 import { logEvent } from "../events/eventsRepo.js";
-import { sendOrderAlerts } from "../orders/adminAlerts.js";
+import { announcePaid } from "../payments/afterPaid.js";
 
 function generateReference(): string {
   return `PAY-${randomBytes(10).toString("hex")}`;
@@ -40,6 +39,8 @@ export const paymentRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
         reference: providerRef,
         customerEmail: email,
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
+        // Subscribe & Save: keep the card so the next deliveries can be charged automatically.
+        saveCard: (await pool.query<{ has_subscription: boolean }>(`SELECT has_subscription FROM orders WHERE id = $1`, [order.id])).rows[0]?.has_subscription === true,
       });
 
       // The provider decides the final reference (Stripe: the Checkout Session id).
@@ -128,33 +129,7 @@ export const paymentRoutes: FastifyPluginAsync = async (app: FastifyInstance) =>
       onStockIssue: (message) => req.log.warn(message),
     });
 
-    // Activity: payment, the paid order (with where the buyer came from), and points moved.
-    const paid = await pool.query<{ payment_method: string | null; source: Record<string, unknown> | null; receipt_number: string | null }>(
-      `SELECT (SELECT provider::text FROM payments WHERE id = $2) AS payment_method, o.source, o.receipt_number::text FROM orders o WHERE o.id = $1`,
-      [order.id, payment.id],
-    ).catch(() => ({ rows: [] as { payment_method: string | null; source: Record<string, unknown> | null; receipt_number: string | null }[] }));
-    const info = paid.rows[0];
-    await logEvent({ type: "payment", message: `Payment received for ${order.orderNumber}: £${Number(order.total).toFixed(2)}`, userId: order.userId, meta: { orderId: order.id, orderNumber: order.orderNumber, amount: Number(order.total), method: info?.payment_method ?? null } });
-    // (The "order paid" line itself is written inside confirmPayment, in the same transaction.)
-    const pts = await pool.query<{ delta: number; reason: string }>(`SELECT delta, reason FROM points_ledger WHERE order_id = $1`, [order.id]);
-    for (const l of pts.rows) {
-      await logEvent({ type: "points", message: l.delta > 0 ? `Earned ${l.delta} points on ${order.orderNumber}` : `Spent ${-l.delta} points on ${order.orderNumber}`, userId: order.userId, meta: { orderNumber: order.orderNumber, delta: l.delta, reason: l.reason } });
-    }
-
-    // Team alerts (new order, low stock). Non-blocking.
-    void sendOrderAlerts(order.id);
-
-    // Order confirmation email. Non-blocking — a send failure must never
-    // cause a non-200 response or the provider keeps retrying.
-    const customerEmail = await getCustomerEmail(order);
-    emailService
-      .send({
-        to: customerEmail,
-        subject: `Order confirmed — ${order.orderNumber}`,
-        template: "order_confirmation",
-        data: { orderNumber: order.orderNumber, total: Number(order.total) },
-      }, order.userId)
-      .catch((err) => req.log.error(err, "order_confirmation email failed"));
+    await announcePaid(order, payment.id, req.log);
 
     return reply.status(200).send({ received: true });
   }

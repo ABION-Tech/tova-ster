@@ -1,3 +1,5 @@
+import { pool } from "../db/pool.js";
+import { logAdmin } from "../events/eventsRepo.js";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireAdmin } from "../auth/adminSession.js";
 import { storageService } from "../services/storage/index.js";
@@ -234,6 +236,20 @@ export const adminProductRoutes: FastifyPluginAsync = async (app: FastifyInstanc
     return reply.status(201).send({ image });
   });
 
+  // Make one photo the main one (shown on cards and first on the product page).
+  app.patch("/admin/products/:id/images/:imageId", {
+    schema: { body: { type: "object", required: ["isPrimary"], additionalProperties: false, properties: { isPrimary: { type: "boolean", const: true } } } },
+  }, async (req, reply) => {
+    const admin = await requireAdmin(req, reply);
+    if (!admin) return;
+    const { id, imageId } = req.params as { id: string; imageId: string };
+    const r = await pool.query(`SELECT 1 FROM product_images WHERE id = $1 AND product_id = $2`, [imageId, id]);
+    if (!r.rowCount) return reply.status(404).send({ error: "Image not found." });
+    await pool.query(`UPDATE product_images SET is_primary = (id = $2) WHERE product_id = $1`, [id, imageId]);
+    await logAdmin(admin.id, `${admin.name} changed the main photo of a product`, { productId: id, imageId });
+    return reply.send({ ok: true });
+  });
+
   app.delete("/admin/products/:id/images/:imageId", async (req, reply) => {
     const admin = await requireAdmin(req, reply);
     if (!admin) return;
@@ -259,6 +275,8 @@ export const adminProductRoutes: FastifyPluginAsync = async (app: FastifyInstanc
 };
 
 function extractPublicId(url: string): string | null {
+  const own = url.match(/\/media\/([0-9a-f-]{36})$/i);
+  if (own) return `media:${own[1]}`;
   // Cloudinary URLs: .../upload/v169.../wellness-ecom/products/<id>/<public_id>.<ext>
   const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z0-9]+$/);
   return match ? match[1] : null;

@@ -12,7 +12,7 @@ import { logEvent } from "../../events/eventsRepo.js";
  */
 
 /** Emails that are marketing (need an unsubscribe link). Order, account and team emails are not. */
-export const MARKETING_TEMPLATES = new Set(["freebie", "birthday"]);
+export const MARKETING_TEMPLATES = new Set(["freebie", "birthday", "basket_reminder", "points_update", "winback"]);
 
 const secret = () => {
   const s = process.env.SESSION_SECRET;

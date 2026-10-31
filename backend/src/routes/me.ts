@@ -4,6 +4,7 @@ import { requireUser } from "../auth/session.js";
 import { logEvent } from "../events/eventsRepo.js";
 import { getSetting } from "../settings/settingsRepo.js";
 import { emailService } from "../services/email/index.js";
+import { paymentService } from "../services/payment/index.js";
 
 const uuid = { type: "string", format: "uuid" } as const;
 
@@ -14,6 +15,7 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     if (!user) return;
     const r = await pool.query(
       `SELECT s.id, s.product_name, s.quantity, s.interval_months, s.unit_price::float, s.status, s.next_charge_at,
+              (s.payment_method_id IS NOT NULL) AS has_card, s.failed_attempts,
               p.slug, (SELECT url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order LIMIT 1) AS image
        FROM subscriptions s LEFT JOIN products p ON p.id = s.product_id
        WHERE s.user_id = $1 AND s.status <> 'cancelled'
@@ -48,6 +50,44 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     return reply.send({ ok: true });
   });
 
+  // Add or replace the card used for Subscribe & Save (after a declined
+  // renewal, or for plans started before cards were saved). The card is
+  // entered on the payment provider's page; we only keep its ids.
+  app.post("/me/subscriptions/card", { config: { rateLimit: { max: 10, timeWindow: "10 minutes" } } }, async (req, reply) => {
+    const user = await requireUser(req, reply);
+    if (!user) return;
+    const s = await pool.query<{ provider_customer_id: string | null }>(
+      `SELECT provider_customer_id FROM subscriptions WHERE user_id = $1 AND status <> 'cancelled' ORDER BY provider_customer_id NULLS LAST LIMIT 1`, [user.id]);
+    if (!s.rows[0]) return reply.status(404).send({ error: "You don't have a subscription." });
+    try {
+      const r = await paymentService.startCardUpdate({ customerId: s.rows[0].provider_customer_id, email: user.email,
+        returnUrl: `${(process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/account?tab=subscriptions` });
+      return reply.send({ url: r.url });
+    } catch (e) {
+      req.log.error(e, "card update start failed");
+      return reply.status(502).send({ error: "Couldn't open the card page. Please try again shortly." });
+    }
+  });
+
+  app.post("/me/subscriptions/card/finish", {
+    schema: { body: { type: "object", required: ["ref"], additionalProperties: false, properties: { ref: { type: "string", maxLength: 200 } } } },
+  }, async (req, reply) => {
+    const user = await requireUser(req, reply);
+    if (!user) return;
+    const saved = await paymentService.finishCardUpdate((req.body as { ref: string }).ref).catch(() => null);
+    if (!saved) return reply.status(400).send({ error: "The card wasn't saved. Please try again." });
+    // New card on every live plan. Plans held up by a payment problem restart now (charged at the next hourly run).
+    const r = await pool.query<{ product_name: string }>(
+      `UPDATE subscriptions SET provider_customer_id = $2, payment_method_id = $3,
+              status = CASE WHEN failed_attempts > 0 THEN 'active' ELSE status END,
+              next_charge_at = CASE WHEN failed_attempts > 0 THEN LEAST(next_charge_at, now()) ELSE next_charge_at END,
+              failed_attempts = 0, last_failed_at = NULL
+       WHERE user_id = $1 AND status <> 'cancelled' RETURNING product_name`,
+      [user.id, saved.customerId, saved.paymentMethodId]);
+    await logEvent({ type: "subscription", message: `Updated the card for ${r.rows.length} subscription${r.rows.length === 1 ? "" : "s"}`, userId: user.id, meta: { count: r.rows.length } });
+    return reply.send({ ok: true, updated: r.rows.length });
+  });
+
   app.get("/me/points", async (req, reply) => {
     const user = await requireUser(req, reply);
     if (!user) return;
@@ -76,6 +116,23 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
     );
     await pool.query(`UPDATE users SET unsubscribed_at = NULL WHERE lower(email) = $1`, [e]); // signing up again re-consents
     await logEvent({ type: "newsletter", message: "Signed up to emails", meta: { source: source ?? null } });
+    return reply.status(204).send();
+  });
+
+  // "Tell me when it's back" on a sold-out product: one email when it returns,
+  // then the address is dropped. No marketing consent needed (they asked for it).
+  app.post("/products/:slug/notify", {
+    config: { rateLimit: { max: 5, timeWindow: "10 minutes" } },
+    schema: { body: { type: "object", required: ["email"], additionalProperties: false, properties: { email: { type: "string", maxLength: 200 } } } },
+  }, async (req, reply) => {
+    const { slug } = req.params as { slug: string };
+    const e = (req.body as { email: string }).email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return reply.status(400).send({ error: "Please enter a valid email address." });
+    const p = await pool.query<{ id: string; name: string }>(`SELECT id, name FROM products WHERE slug = $1 AND status IN ('active','out_of_stock')`, [slug]);
+    if (!p.rows[0]) return reply.status(404).send({ error: "Product not found." });
+    await pool.query(
+      `INSERT INTO stock_alerts (product_id, email) VALUES ($1, $2) ON CONFLICT (product_id, lower(email)) WHERE notified_at IS NULL DO NOTHING`, [p.rows[0].id, e]);
+    await logEvent({ type: "newsletter", message: `Asked to hear when ${p.rows[0].name} is back`, meta: { product: slug, backInStock: true } });
     return reply.status(204).send();
   });
 

@@ -30,6 +30,7 @@ export interface Product {
   rating: number | null;
   review_count: number;
   inStock: boolean;
+  hidden?: boolean; // sold out and hidden from listings; its page still opens
   onlyLeft: number | null;
 }
 

@@ -213,7 +213,7 @@ export function ShopProvider({ initialProducts, initialStore, children }: { init
     const bySlug = new Map(products.map((p) => [p.slug, p]));
     const byId = new Map(products.map((p) => [p.id, p]));
     return {
-      products, store, bySlug, byId, live: products.filter((p) => p.status === "active" || p.status === "out_of_stock"),
+      products, store, bySlug, byId, live: products.filter((p) => (p.status === "active" || p.status === "out_of_stock") && !p.hidden),
       cart, cartBusy, addItem, addBundle, addQuizSet, setQty, setSub, removeLine, applyCode, setRedeem, rememberPostcode, refreshCart,
       user, userReady, signIn, signUp, signOut, saveBirthday,
       recent, viewed, quiz, setQuiz,

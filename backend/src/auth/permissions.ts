@@ -27,6 +27,7 @@ export const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "GET /admin/orders": ALL,
   "GET /admin/orders/:id": ALL,
   "PATCH /admin/orders/:id/status": MP, // Packers only pack/dispatch/deliver: checked in the route
+  "POST /admin/orders/:id/refund": M,
   // Customers (Support answers customer questions here)
   "GET /admin/customers": MS,
   "GET /admin/customers/:id": MS,
@@ -45,6 +46,7 @@ export const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "PATCH /admin/products/:id": M,
   "POST /admin/products/:id/images": M,
   "DELETE /admin/products/:id/images/:imageId": M,
+  "PATCH /admin/products/:id/images/:imageId": M,
   "POST /admin/products/:id/variants": M,
   "PATCH /admin/products/:id/variants/:variantId": M,
   "DELETE /admin/products/:id/variants/:variantId": M,

@@ -1,5 +1,5 @@
-import { randomBytes } from "node:crypto";
-import type { PaymentIntent, PaymentProviderAdapter, VerifyResult } from "./PaymentService.js";
+import { createHash, randomBytes } from "node:crypto";
+import type { ChargeResult, ChargeSavedParams, PaymentIntent, PaymentProviderAdapter, RefundResult, SavedMethod, VerifyResult } from "./PaymentService.js";
 
 /**
  * Local and staging only (PAYMENT_PROVIDER=test). Lets the whole checkout be
@@ -40,5 +40,28 @@ export class TestPayAdapter implements PaymentProviderAdapter {
 
   verifyWebhookSignature(): boolean {
     return true;
+  }
+
+  /** Pretend saved card. A card id containing "decline" is refused, to test failed renewals. */
+  savedMethod(): SavedMethod { return { customerId: "cus_test", paymentMethodId: "pm_test_card" }; }
+
+  async chargeSaved(p: ChargeSavedParams): Promise<ChargeResult> {
+    const reference = `pi_test_${createHash("sha256").update(p.idempotencyKey).digest("hex").slice(0, 24)}`;
+    if (p.paymentMethodId.includes("decline")) return { reference, status: "failed", message: "Your card was declined (test).", raw: { test: true } };
+    return { reference, status: "success", raw: { test: true, amount: p.amountMinor } };
+  }
+
+  async startCardUpdate(p: { returnUrl: string }): Promise<{ url: string; reference: string }> {
+    const reference = `setup_test_${randomBytes(8).toString("hex")}`;
+    return { url: `${p.returnUrl}${p.returnUrl.includes("?") ? "&" : "?"}card_ref=${reference}`, reference };
+  }
+
+  async finishCardUpdate(reference: string): Promise<SavedMethod | null> {
+    return reference.startsWith("setup_test_") ? { customerId: "cus_test", paymentMethodId: "pm_test_card" } : null;
+  }
+
+  /** Pretend refund: always succeeds (same key, same id, like Stripe). */
+  async refund(params: { amountMinor: number; idempotencyKey: string }): Promise<RefundResult> {
+    return { id: `re_test_${createHash("sha256").update(params.idempotencyKey).digest("hex").slice(0, 24)}`, status: "succeeded" };
   }
 }

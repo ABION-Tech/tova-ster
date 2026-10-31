@@ -41,7 +41,8 @@ export function Quiz({ showResult }: { showResult: boolean }) {
     for (const q of steps) for (const o of q.opts) {
       if (!has(a, q.id, o.id)) continue;
       if (o.gp) gp = true;
-      const p = o.productSlug ? bySlug.get(o.productSlug) : undefined;
+      const found = o.productSlug ? bySlug.get(o.productSlug) : undefined;
+      const p = found && !found.hidden ? found : undefined;
       if (p && p.inStock && !recs.find((r) => r.p.id === p.id)) recs.push({ p, why: o.why || p.benefits[0] || p.short_description || "" });
     }
     const top = recs.slice(0, Math.max(1, f.quiz.max));

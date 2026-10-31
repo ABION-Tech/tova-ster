@@ -4,6 +4,7 @@ import { requireAdmin } from "../auth/adminSession.js";
 import { pool } from "../db/pool.js";
 import { emailService } from "../services/email/index.js";
 import { getSetting } from "../settings/settingsRepo.js";
+import { refundOrder, RefundError } from "../payments/refunds.js";
 
 const VALID_STATUSES = new Set([
   "PENDING_PAYMENT", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED",
@@ -11,8 +12,10 @@ const VALID_STATUSES = new Set([
 
 // Status transitions the admin is allowed to drive manually.
 // Payment webhook owns PENDING_PAYMENT → PAID; everything else is manual.
+// Refunds don't go through here: they use POST /admin/orders/:id/refund, which
+// pays the money back through Stripe first. Cancelling a paid order refunds it.
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  PAID: ["PROCESSING", "CANCELLED", "REFUNDED"],
+  PAID: ["PROCESSING", "CANCELLED"],
   PROCESSING: ["SHIPPED", "CANCELLED"],
   SHIPPED: ["DELIVERED", "CANCELLED"],
   PENDING_PAYMENT: ["CANCELLED"],
@@ -127,8 +130,9 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
       addr_state: string | null;
       addr_country: string | null;
       addr_postal_code: string | null;
+      carrier_order_id: string | null; carrier_error: string | null; tracking_number: string | null; carrier: string | null; renewal_key: string | null;
     }>(
-      `SELECT
+      `SELECT o.carrier_order_id, o.carrier_error, o.tracking_number, o.carrier, o.renewal_key,
          o.id, o.order_number, o.status, o.currency,
          o.subtotal, o.delivery_fee, o.discount_total, o.total,
          o.placed_at, o.delivery_instructions,
@@ -177,6 +181,13 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
        FROM payments WHERE order_id = $1 ORDER BY created_at DESC`,
       [id],
     );
+
+    const refundsResult = await pool.query<{ id: string; amount: string; status: string; reason: string | null; restocked: boolean; points_reversed: number; created_at: string; admin_name: string | null; provider_refund_id: string | null }>(
+      `SELECT r.id, r.amount, r.status, r.reason, r.restocked, r.points_reversed, r.created_at, r.provider_refund_id, a.name AS admin_name
+       FROM refunds r LEFT JOIN admin_users a ON a.id = r.admin_id WHERE r.order_id = $1 ORDER BY r.created_at`, [id]);
+    const refundedAmount = refundsResult.rows.reduce((t, r) => t + Number(r.amount), 0);
+    const canRefund = (admin.role === "Owner" || admin.role === "Manager") && ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(o.status)
+      && Math.round(Number(o.total) * 100) > Math.round(refundedAmount * 100);
 
     const order = {
       id: o.id,
@@ -228,12 +239,39 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
         createdAt: r.created_at,
         verifiedAt: r.verified_at,
       })),
+      refunds: refundsResult.rows.map((r) => ({ id: r.id, amount: Number(r.amount), status: r.status, reason: r.reason, restocked: r.restocked,
+        pointsReversed: r.points_reversed, createdAt: r.created_at, by: r.admin_name, reference: r.provider_refund_id })),
+      refundedAmount: Math.round(refundedAmount * 100) / 100,
+      shipping: { clickAndDropId: o.carrier_order_id, problem: o.carrier_error, tracking: o.tracking_number, carrier: o.carrier },
+      subscriptionRenewal: Boolean(o.renewal_key),
+      refundable: canRefund ? Math.round((Number(o.total) - refundedAmount) * 100) / 100 : 0,
       // Only the moves this person's role may make (Packers: pack, dispatch, deliver; Support: none).
       allowedNextStatuses: (ALLOWED_TRANSITIONS[o.status] ?? []).filter((s) =>
         admin.role === "Support" ? false : admin.role === "Packer" ? ["PROCESSING", "SHIPPED", "DELIVERED"].includes(s) : true),
     };
 
     return reply.send({ order });
+  });
+
+  // ── POST /admin/orders/:id/refund ────────────────────────────────────────────
+  // Whole or part refund through the payment provider (Managers and the Owner).
+  app.post("/admin/orders/:id/refund", {
+    schema: { body: { type: "object", additionalProperties: false, properties: {
+      amount: { type: "number", exclusiveMinimum: 0, maximum: 100000 }, restock: { type: "boolean" }, reason: { type: "string", maxLength: 300 },
+    } } },
+  }, async (req, reply) => {
+    const admin = await requireAdmin(req, reply);
+    if (!admin) return;
+    const { id } = req.params as { id: string };
+    const b = (req.body ?? {}) as { amount?: number; restock?: boolean; reason?: string };
+    try {
+      const r = await refundOrder({ orderId: id, admin, amount: b.amount, restock: b.restock, reason: b.reason?.trim() || undefined });
+      return reply.send(r);
+    } catch (e) {
+      if (e instanceof RefundError) return reply.status(e.status).send({ error: e.message });
+      req.log.error(e, "refund failed");
+      return reply.status(502).send({ error: e instanceof Error ? e.message : "Refund failed." });
+    }
   });
 
   // ── PATCH /admin/orders/:id/status ───────────────────────────────────────────
@@ -279,6 +317,17 @@ export const adminOrderRoutes: FastifyPluginAsync = async (app: FastifyInstance)
         return reply.status(400).send({
           error: `Cannot transition ${currentStatus} → ${newStatus}. Allowed: ${allowed.join(", ") || "none"}.`,
         });
+      }
+
+      // Cancelling a paid order gives the money back first (and puts unsent items back in stock).
+      if (newStatus === "CANCELLED" && currentStatus !== "PENDING_PAYMENT") {
+        try {
+          const r = await refundOrder({ orderId: id, admin, cancel: true, restock: ["PAID", "PROCESSING"].includes(currentStatus), reason: "Order cancelled" });
+          return reply.send({ id, status: r.status, refunded: r.amount });
+        } catch (e) {
+          if (e instanceof RefundError) return reply.status(e.status).send({ error: e.message });
+          throw e;
+        }
       }
 
       // Keep the customer-facing stage, dates and tracking in step with the status.
