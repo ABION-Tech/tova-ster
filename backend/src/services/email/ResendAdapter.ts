@@ -1,4 +1,5 @@
 import type { EmailProviderAdapter, EmailPayload } from "./EmailService.js";
+import { MARKETING_TEMPLATES } from "./unsubscribe.js";
 
 /**
  * Calls the Resend REST API directly — no SDK dependency, same pattern as
@@ -8,6 +9,9 @@ import type { EmailProviderAdapter, EmailPayload } from "./EmailService.js";
  * missing key fails the specific email call, not the whole server boot):
  *   RESEND_API_KEY   — "re_…" key from the Resend dashboard
  *   EMAIL_FROM       — verified sender, e.g. "Tova-Ster <orders@mail.tova-ster.com>"
+ *   EMAIL_FROM_MARKETING — optional sender for marketing emails (newsletter,
+ *                      basket reminders, offers), e.g. "Tova-Ster <hello@news.tova-ster.com>",
+ *                      so complaints about marketing never affect order emails.
  *   EMAIL_REPLY_TO   — optional inbox for replies, e.g. info@tova-ster.com
  */
 export class ResendAdapter implements EmailProviderAdapter {
@@ -33,7 +37,7 @@ export class ResendAdapter implements EmailProviderAdapter {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: this.fromAddress,
+        from: (MARKETING_TEMPLATES.has(payload.template) && process.env.EMAIL_FROM_MARKETING) || this.fromAddress,
         // Replies go to a real inbox (EMAIL_REPLY_TO), since mail is sent from a sending-only subdomain.
         ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
         to: [payload.to],
