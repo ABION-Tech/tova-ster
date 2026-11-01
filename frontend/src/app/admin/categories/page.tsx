@@ -58,66 +58,45 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div>
-      <h1 className="display-3" style={{ marginBottom: 20 }}>Categories</h1>
+    <>
+      <div className="ahead"><div><h1>Categories</h1><p>Groups used to organise products in the shop.</p></div></div>
 
-      <form onSubmit={handleCreate} style={{ display: "flex", gap: 8, alignItems: "end", marginBottom: 24 }}>
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} required className="input" style={{ display: "block" }} />
-        </label>
-        <label>
-          Slug
-          <input value={slug} onChange={(e) => setSlug(e.target.value)} required className="input" style={{ display: "block" }} />
-        </label>
-        <label>
-          Parent category
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="input" style={{ display: "block" }}>
-            <option value="">— none —</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className="btn btn-primary btn-sm">Add category</button>
+      <form onSubmit={handleCreate} className="acard">
+        <h2>Add a category</h2>
+        <div className="formgrid">
+          <label className="fld">Name<input value={name} onChange={(e) => setName(e.target.value)} required /></label>
+          <label className="fld">Web address name (slug)<input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))} required /></label>
+          <label className="fld">Inside another category
+            <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
+              <option value="">No, top level</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <div className="fld" style={{ alignContent: "end" }}><button type="submit" className="btn sm">Add category</button></div>
+        </div>
       </form>
-      {error && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
+      {error && <div className="notice warn" role="alert">{error}</div>}
 
-      {loading ? (
-        <p style={{ color: "var(--ink-muted)" }}>Loading categories…</p>
-      ) : (
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              <th style={cellStyle}>Name</th>
-              <th style={cellStyle}>Slug</th>
-              <th style={cellStyle}>Parent</th>
-              <th style={cellStyle}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((c) => (
-              <tr key={c.id}>
-                <td style={cellStyle}>{c.name}</td>
-                <td style={cellStyle}>{c.slug}</td>
-                <td style={cellStyle}>{categories.find((p) => p.id === c.parent_id)?.name ?? "—"}</td>
-                <td style={cellStyle}>
-                  <button onClick={() => handleDelete(c.id)} className="btn btn-outline btn-sm" style={{ color: "var(--danger-text)" }}>Delete</button>
-                </td>
-              </tr>
-            ))}
-            {categories.length === 0 && (
-              <tr>
-                <td style={cellStyle} colSpan={4}>No categories yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
-    </div>
+      <div className="acard">
+        {loading ? <p className="muted">Loading categories…</p> : (
+          <div className="tscroll">
+            <table className="t">
+              <thead><tr><th>Name</th><th>Slug</th><th>Inside</th><th /></tr></thead>
+              <tbody>
+                {categories.map((c) => (
+                  <tr key={c.id}>
+                    <td><b>{c.name}</b></td>
+                    <td className="muted">{c.slug}</td>
+                    <td>{categories.find((p) => p.id === c.parent_id)?.name ?? "–"}</td>
+                    <td className="r"><button onClick={() => handleDelete(c.id)} className="btn ghost sm danger">Delete</button></td>
+                  </tr>
+                ))}
+                {categories.length === 0 && <tr><td colSpan={4} className="muted">No categories yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
-
-const cellStyle: React.CSSProperties = { border: "1px solid var(--line)", padding: 8, textAlign: "left" };

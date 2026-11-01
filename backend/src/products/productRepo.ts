@@ -98,7 +98,9 @@ export async function listProductsAdmin(filters: ProductListFilters): Promise<Pr
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const result = await pool.query<ProductRecord>(
-    `SELECT * FROM products ${where} ORDER BY created_at DESC`,
+    `SELECT products.*,
+            (SELECT url FROM product_images i WHERE i.product_id = products.id ORDER BY i.is_primary DESC, i.created_at LIMIT 1) AS image_url
+     FROM products ${where} ORDER BY created_at DESC`,
     params,
   );
   return result.rows;

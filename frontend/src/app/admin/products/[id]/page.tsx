@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { adminFetch, adminJson } from "../../../../lib/backend";
@@ -54,7 +55,7 @@ export default function AdminProductDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (!product) return <p style={{ color: "var(--ink-muted)" }}>Loading product…</p>;
+  if (!product) return <p className="muted">Loading product…</p>;
 
   async function withError(fn: () => Promise<void>) {
     setError(null);
@@ -66,40 +67,41 @@ export default function AdminProductDetailPage() {
   }
 
   return (
-    <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 4 }}>
-      <p>
-        <a href="/admin/products">← All products</a>
-      </p>
-      <h1>{product.name}</h1>
-      {error && <p style={{ color: "var(--danger-text)" }}>{error}</p>}
-
+    <>
+      <div className="ahead">
+        <div>
+          <Link className="backlink" href="/admin/products">← All products</Link>
+          <h1>{product.name}</h1>
+        </div>
+        <a className="btn ghost sm" href={`/products/${product.slug}`} target="_blank" rel="noopener">View in the shop</a>
+      </div>
+      {error && <div className="notice warn" role="alert">{error}</div>}
       {!mayEdit && (
-        <p style={{ padding: 12, borderRadius: 8, background: "#F4EAD3", fontSize: 13 }}>
-          View only for your role ({admin?.role}).{mayStock ? " You can update stock below." : ""}
-        </p>
+        <div className="notice gold">View only for your role ({admin?.role}).{mayStock ? " You can update stock." : ""}</div>
       )}
-      <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+
+      <div className="pgrid">
+      <fieldset disabled={!mayEdit} className="acard plain">
         <EditProductForm product={product} onSaved={load} withError={withError} />
       </fieldset>
 
-      <hr style={{ margin: "24px 0" }} />
-
+      <div className="pcol">
       {product.has_variants ? (
-        <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+        <fieldset disabled={!mayEdit} className="acard plain">
           <VariantsSection product={product} onChanged={load} withError={withError} />
         </fieldset>
       ) : (
-        <fieldset disabled={!mayStock} style={{ border: 0, padding: 0, margin: 0 }}>
+        <fieldset disabled={!mayStock} className="acard plain">
           <StockAdjustSection productId={product.id} currentStock={product.stock} onChanged={load} withError={withError} />
         </fieldset>
       )}
 
-      <hr style={{ margin: "24px 0" }} />
-
-      <fieldset disabled={!mayEdit} style={{ border: 0, padding: 0, margin: 0 }}>
+      <fieldset disabled={!mayEdit} className="acard plain">
         <ImagesSection product={product} onChanged={load} withError={withError} />
       </fieldset>
-    </div>
+      </div>
+      </div>
+    </>
   );
 }
 
@@ -136,34 +138,23 @@ function EditProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 460 }}>
-      <h2 className="display-3">Details</h2>
-      <label className="field-label">
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} className="input" />
-      </label>
-      <label>
-        Base price (£)
-        <input type="number" min="0" step="0.01" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} className="input" />
-      </label>
-      <label>
-        Discount price (£, optional)
-        <input type="number" min="0" step="0.01" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} className="input" />
-      </label>
-      <label>
-        Description
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input" rows={4} style={{ resize: "vertical" }} />
-      </label>
-      <label>
-        Status
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="out_of_stock">Out of stock</option>
+    <form onSubmit={handleSubmit} className="stack">
+      <h2>Details</h2>
+      <label className="fld">Name<input value={name} onChange={(e) => setName(e.target.value)} /></label>
+      <div className="formgrid">
+        <label className="fld">Price (£, including VAT)<input type="number" min="0" step="0.01" inputMode="decimal" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} /></label>
+        <label className="fld">Sale price (£, optional)<input type="number" min="0" step="0.01" inputMode="decimal" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} /></label>
+      </div>
+      <label className="fld">Description<textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} /></label>
+      <label className="fld">Status
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="draft">Draft (hidden from the shop)</option>
+          <option value="active">On sale</option>
+          <option value="out_of_stock">Sold out</option>
           <option value="archived">Archived</option>
         </select>
       </label>
-      <button type="submit" className="btn btn-primary btn-sm">Save details</button>
+      <div><button type="submit" className="btn sm">Save details</button></div>
     </form>
   );
 }
@@ -195,22 +186,22 @@ function StockAdjustSection({
   }
 
   return (
-    <div>
-      <h2>Stock: {currentStock}</h2>
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, alignItems: "end" }}>
-        <label>
-          Adjust by (use a negative number to reduce)
-          <input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} required className="input" style={{ display: "block" }} />
+    <div className="stack">
+      <div className="frow"><h2>Stock</h2><b className="bignum">{currentStock ?? "–"}</b></div>
+      <form onSubmit={handleSubmit} className="formgrid">
+        <label className="fld">
+          Add or remove (e.g. 24 or -2)
+          <input type="number" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} required />
         </label>
-        <label>
+        <label className="fld">
           Reason
-          <select value={changeType} onChange={(e) => setChangeType(e.target.value as typeof changeType)} className="input" style={{ display: "block" }}>
+          <select value={changeType} onChange={(e) => setChangeType(e.target.value as typeof changeType)}>
             <option value="restock">Restock</option>
             <option value="adjustment">Adjustment</option>
             <option value="return">Return</option>
           </select>
         </label>
-        <button type="submit" className="btn btn-primary btn-sm">Apply</button>
+        <div className="fld" style={{ alignContent: "end" }}><button type="submit" className="btn sm">Update stock</button></div>
       </form>
     </div>
   );
@@ -377,25 +368,25 @@ function ImagesSection({
   }
 
   return (
-    <div>
-      <h2>Images</h2>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+    <div className="stack">
+      <h2>Photos</h2>
+      <div className="photogrid">
         {product.images.map((img) => (
-          <div key={img.id} style={{ width: 132, display: "grid", gap: 4 }}>
+          <div key={img.id} className="photo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.url} alt={img.alt_text ?? ""} width={132} height={132} style={{ objectFit: "cover", borderRadius: 8, border: img.is_primary ? "2px solid var(--gold)" : "1px solid var(--line)" }} />
+            <img src={img.url} alt={img.alt_text ?? ""} className={img.is_primary ? "main" : ""} />
             {img.is_primary
               ? <span className="pill active" style={{ justifySelf: "start" }}>Main photo</span>
-              : <button onClick={() => makeMain(img.id)} className="btn btn-outline btn-sm">Make main</button>}
-            <button onClick={() => handleDelete(img.id)} className="btn btn-outline btn-sm" style={{ color: "var(--danger-text)" }}>Delete</button>
+              : <button onClick={() => makeMain(img.id)} className="btn ghost sm">Make main</button>}
+            <button onClick={() => handleDelete(img.id)} className="btn ghost sm danger">Delete</button>
           </div>
         ))}
       </div>
-      <label className="btn btn-sm" style={{ cursor: uploading ? "wait" : "pointer" }}>
+      <label className="btn sm" style={{ cursor: uploading ? "wait" : "pointer", justifySelf: "start" }}>
         {uploading ? "Uploading…" : "Add a photo"}
         <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} disabled={uploading} style={{ display: "none" }} />
       </label>
-      <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>
+      <p className="muted">
         JPG, PNG or WebP, up to 5 MB. Only use the client&apos;s own product photos. Square photos on a plain background look best.
       </p>
     </div>

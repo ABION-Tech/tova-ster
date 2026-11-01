@@ -9,7 +9,7 @@ interface Site { hero: { slides: Slide[]; autoplay: boolean; intervalSec: number
 interface Product { slug: string; name: string }
 
 const box: React.CSSProperties = { border: "1px solid #E2DFD9", borderRadius: 12, padding: 18, display: "grid", gap: 10, background: "#fff" };
-const row: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 };
+const row: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 10 };
 const lab: React.CSSProperties = { display: "grid", gap: 4, fontSize: 13 };
 const inp: React.CSSProperties = { padding: 8, border: "1px solid #D5D1CA", borderRadius: 8, font: "inherit" };
 
@@ -78,7 +78,7 @@ export default function HomepageAdmin() {
             <button className="btn" disabled={i === slides.length - 1} onClick={() => move(i, 1)} aria-label="Move down">↓</button>
             <button className="btn" onClick={() => confirm("Remove this slide?") && setSlides(slides.filter((_, k) => k !== i))}>Remove</button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 220px) 1fr", gap: 14 }}>
+          <div className="slidegrid">
             <div style={{ borderRadius: 10, overflow: "hidden", background: s.bg, aspectRatio: "16 / 9", display: "grid", placeItems: "center", fontSize: 12, color: "#6E685E" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {s.media?.src ? (s.media.kind === "video" ? <video src={s.media.src} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={s.media.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />) : "No picture"}

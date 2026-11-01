@@ -76,6 +76,30 @@ export const activityRoutes: FastifyPluginAsync = async (app: FastifyInstance) =
     return reply.send({ days, steps, sales: f.sales });
   });
 
+  /** Figures shown on the Growth tools cards: how each feature is doing. */
+  app.get("/admin/reports/growth", async (req, reply) => {
+    if (!(await requireAdmin(req, reply))) return;
+    const r = await pool.query<{ subs: number; subs_month: number; points: number; avg_order: number | null; orders7: number; bundles_live: number; bundles: number; codes_live: number }>(
+      `SELECT
+         (SELECT COUNT(*)::int FROM subscriptions WHERE status = 'active') AS subs,
+         (SELECT COALESCE(SUM(unit_price * quantity / interval_months), 0)::float FROM subscriptions WHERE status = 'active') AS subs_month,
+         (SELECT COALESCE(SUM(points_balance), 0)::int FROM users) AS points,
+         (SELECT AVG(total)::float FROM orders WHERE status IN ('PAID','PROCESSING','SHIPPED','DELIVERED') AND placed_at > now() - interval '7 days') AS avg_order,
+         (SELECT COUNT(*)::int FROM orders WHERE status IN ('PAID','PROCESSING','SHIPPED','DELIVERED') AND placed_at > now() - interval '7 days') AS orders7,
+         (SELECT COUNT(*) FILTER (WHERE active)::int FROM bundles WHERE kind = 'standard') AS bundles_live,
+         (SELECT COUNT(*)::int FROM bundles WHERE kind = 'standard') AS bundles,
+         (SELECT COUNT(*)::int FROM discount_codes WHERE active AND (expires_at IS NULL OR expires_at > now()) AND (max_uses IS NULL OR uses < max_uses)) AS codes_live`);
+    const g = r.rows[0];
+    return reply.send({
+      subscriptions: { active: g.subs, perMonth: Math.round(g.subs_month * 100) / 100 },
+      points: g.points,
+      avgOrder: g.avg_order === null ? null : Math.round(g.avg_order * 100) / 100,
+      orders7: g.orders7,
+      bundles: { live: g.bundles_live, total: g.bundles },
+      codesLive: g.codes_live,
+    });
+  });
+
   /** Paid sales by where the buyer first came from (last N days, default 30). */
   app.get("/admin/reports/channels", async (req, reply) => {
     if (!(await requireAdmin(req, reply))) return;
