@@ -6,6 +6,9 @@ import { NextResponse, type NextRequest } from "next/server";
  * MAIN_HOSTS     the shop's public addresses (default tova-ster.com, www.tova-ster.com)
  * SITE_OPEN      "true" opens the full shop there (launch day). Until then
  *                visitors see the launching-soon page and can join the email list.
+ * CHECKOUT_OPEN  "true" lets visitors on the main address check out. Until then
+ *                (while payments are in test mode) checkout there shows "orders
+ *                open soon" with the email sign-up, so nobody can place a test order.
  * PREVIEW_KEY    tova-ster.com/?preview=<key> lets the team and client into the
  *                full shop on the main address (remembered for 30 days).
  *
@@ -35,7 +38,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(to, 301);
   }
 
-  if (OPEN) return NextResponse.next();
+  if (OPEN) {
+    const team = KEY && req.cookies.get(COOKIE)?.value === KEY;
+    if (process.env.CHECKOUT_OPEN !== "true" && !team && url.pathname.startsWith("/checkout")) {
+      const soon = url.clone();
+      soon.pathname = "/soon";
+      soon.search = "?for=checkout";
+      return NextResponse.rewrite(soon);
+    }
+    if (!(KEY && url.searchParams.has("preview"))) return NextResponse.next();
+  }
 
   // ?preview=<key> → remember, then show the same page without the key in the address.
   const asked = url.searchParams.get("preview");

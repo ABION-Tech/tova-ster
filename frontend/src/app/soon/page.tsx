@@ -16,19 +16,23 @@ const RANGE = [
   { name: "Vitamin D3 4000iu", img: "/brand/vitamin-d3.jpg" },
 ];
 
-export default function Soon() {
+export default async function Soon({ searchParams }: { searchParams: Promise<{ for?: string }> }) {
+  const checkout = (await searchParams).for === "checkout";
   return (
     <main className="soon">
       <header className="soon-top">
-        <span className="logo"><img src="/brand/monogram.png" alt="" /><b>TOVA-STER</b></span>
+        <a className="logo" href="/"><img src="/brand/monogram.png" alt="" /><b>TOVA-STER</b></a>
       </header>
 
       <section className="soon-hero">
         <div className="soon-copy">
-          <p className="soon-kicker">Launching soon in the UK</p>
-          <h1>Everyday vitamins, minerals and gummies, delivered across the UK.</h1>
-          <p className="soon-lede">Our shop opens soon. Join the list and we&rsquo;ll email you the day it opens, with news of launch offers.</p>
+          <p className="soon-kicker">{checkout ? "Orders open soon" : "Launching soon in the UK"}</p>
+          <h1>{checkout ? "We\u2019re nearly ready to take orders." : "Everyday vitamins, minerals and gummies, delivered across the UK."}</h1>
+          <p className="soon-lede">{checkout
+            ? "Online ordering opens very soon. Leave your email and we\u2019ll tell you the moment it does, with news of launch offers. Your basket is saved for when you come back."
+            : "Our shop opens soon. Join the list and we\u2019ll email you the day it opens, with news of launch offers."}</p>
           <SoonSignup />
+          {checkout && <p className="soon-back"><a className="btn ghost" href="/shop">Back to the shop</a></p>}
         </div>
         <div className="soon-photo"><img src="/brand/hero-collagen.jpg" alt="Tova-Ster Collagen Complex gummies" /></div>
       </section>
