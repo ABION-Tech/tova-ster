@@ -401,7 +401,7 @@ function basketReminderEmail(data: Record<string, unknown>): string {
      ${code ? `<div style="background:#F3EEE3;border-radius:8px;padding:14px 16px;margin:4px 0 8px;">
         <p style="margin:0;font-size:14px;">Use <strong style="color:${BRAND_GOLD};letter-spacing:.04em;">${esc(code)}</strong> for ${esc(str(data, "pct"))}% off. One use, for the next 7 days.</p></div>` : ""}
      <div>${btn(str(data, "link"), "Go to my basket")}</div>
-     <p style="font-size:12px;color:${BRAND_MUTED};margin:8px 0 0;">Prices and stock are checked again at checkout. Free UK delivery on orders over £40.</p>`,
+     <p style="font-size:12px;color:${BRAND_MUTED};margin:8px 0 0;">Prices and stock are checked again at checkout.</p>`,
     unsub(data),
   );
 }

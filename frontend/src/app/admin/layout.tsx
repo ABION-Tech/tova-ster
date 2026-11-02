@@ -37,6 +37,7 @@ const NAV: { group: string; links: { href: string; label: string; area: string }
     { href: "/admin/instagram", label: "Instagram", area: "instagram" },
   ] },
   { group: "Setup", links: [
+    { href: "/admin/delivery", label: "Delivery", area: "delivery" },
     { href: "/admin/team", label: "Team & access", area: "team" },
     { href: "/admin/security", label: "Two-step sign-in", area: "security" },
   ] },

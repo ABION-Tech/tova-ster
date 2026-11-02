@@ -1007,8 +1007,8 @@ const BASE_PRODUCTS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  announcement: { on: true, messages: ["Free UK delivery on orders over £40", "Subscribe & save 15% on every order", "3 for 2 across the whole range"] },
-  freeDelivery: { on: true, threshold: 40 },
+  announcement: { on: true, messages: ["Delivered across the UK", "Subscribe & save 15% on every order", "3 for 2 across the whole range"] },
+  freeDelivery: { on: false, threshold: 40 },
   subscribe: { on: true, discount: 15, freqs: [1, 2, 3] },
   multibuy: { on: true, mode: "3for2" },
   bundles: { on: true },
@@ -1098,7 +1098,7 @@ function seedData() {
 }
 
 /* ───────────────────────── State (saved in this browser only) ───────────────────────── */
-const KEY = "tovaster-demo-v4"; // v3: five-product range, hero carousel, free guide, Instagram page
+const KEY = "tovaster-demo-v5"; // v5: free delivery off by default. v3: five-product range, hero carousel, free guide, Instagram page
 function fresh() {
   const seeded = seedData();
   return {
@@ -2406,7 +2406,7 @@ function growthPage() {
     ${feat("alerts", "Team alerts", "Emails the team when an order is paid, and when a sale takes a product down to its low-stock level.", "", "Sent to info@tova-ster.com. Each low-stock alert is sent once, by the order that crossed the level.")}
     ${feat("quiz", "Vitamin finder quiz", "Five questions that end in a suggested set.", `${num("quiz.discount", "Discount on the suggested set (%)", 'min="0" max="40"')}<div class="frow"><span>Questions and suggestions</span><button class="btn ghost sm" data-admin="quizedit">Edit quiz</button></div>`, "")}
     ${feat("freebie", "Free guide for emails", "A free download offered for an email address, with consent. Shown on the homepage and, if you like, in a pop-up.", `<div class="frow"><label for="fb-t">Title</label><input id="fb-t" class="ain wide" style="flex:1" value="${esc(st.freebie.title)}" data-set="freebie.title"></div><div class="frow"><label for="fb-x">Text</label><input id="fb-x" class="ain wide" style="flex:1" value="${esc(st.freebie.text)}" data-set="freebie.text"></div><div class="frow"><label for="fb-b">Button</label><input id="fb-b" class="ain wide" style="flex:1" value="${esc(st.freebie.button)}" data-set="freebie.button"></div><div class="frow"><span>Also offer it in a pop-up</span>${sw("freebie.popup", "Pop-up")}</div>${num("freebie.delaySec", "Pop-up after (seconds)", 'min="5" max="120"')}<div class="frow"><span>Give the welcome code too</span>${sw("freebie.giveCode", "Welcome code")}</div><div class="frow"><span>The guide</span><button class="btn ghost sm" data-act="fbdownload">Download the PDF</button></div>`, `<b>${S.fbSignups || 0}</b> sign-ups from the guide in this demo. Each is saved with consent and tagged "free guide". Never shown at checkout; "No thanks" waits ${st.freebie.remindDays} days.`)}
-    ${feat("freeDelivery", "Free delivery bar", "Shows how close the basket is to free delivery.", num("freeDelivery.threshold", "Free delivery from (£)", 'min="0"'), `Average order is <b>${gbp(avgOrder())}</b>. A threshold a little above it encourages one more item.`)}
+    ${feat("freeDelivery", "Free delivery", "Free delivery over an amount you choose, with a bar in the basket. Off unless you switch it on: you pay the postage on those orders.", num("freeDelivery.threshold", "Free delivery from (£)", 'min="0"'), `Average order is <b>${gbp(avgOrder())}</b>. A threshold a little above it encourages one more item.`)}
     ${feat("announcement", "Announcement bar", "The rotating line at the top of every page.", st.announcement.messages.map((m, i) => `<div class="frow"><input class="ain wide" style="flex:1" aria-label="Message ${i + 1}" value="${esc(m)}" data-ann="${i}"><button class="btn ghost sm" data-annrm="${i}">Remove</button></div>`).join("") + `<button class="btn ghost sm" data-act="annadd" style="justify-self:start">Add a message</button>`, "")}
     ${feat("welcome", "Welcome offer", "A small card offering money off a first order, after a newsletter sign-up.", `${num("welcome.pct", "Discount (%)", 'min="0" max="50"')}<div class="frow"><span>Code</span><b>${esc(st.welcome.code)}</b></div>`, "Shown once per visitor, never on checkout.")}
     ${feat("bundles", "Bundles", "Product pairs sold together at a lower price.", `<div class="frow"><span>${S.bundles.filter(b => b.on).length} of ${S.bundles.length} bundles live</span><button class="btn ghost sm" data-admin="offers">Manage bundles</button></div>`, "")}

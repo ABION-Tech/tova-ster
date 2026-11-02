@@ -8,7 +8,7 @@ import { ProductArt } from "../ProductArt";
 import { Icon } from "../Icons";
 import { Loading } from "../Loading";
 import { BackInStock } from "../BackInStock";
-import { cutoffText, freqLabel, gbp, gbpShort, needOf, round2, shopHref, stockState, subPrice } from "../../../lib/tova/shop";
+import { cutoffText, freqLabel, gbp, gbpShort, needOf, round2, shopHref, stockState, subPrice, zoneName } from "../../../lib/tova/shop";
 
 function Cutoff({ hour }: { hour: number }) {
   // Rendered after mount (clock-dependent) and refreshed each minute.
@@ -147,7 +147,7 @@ export function ProductPage({ slug }: { slug: string }) {
             {p.how_to_take && <details className="acc" open><summary>How to take</summary><div className="in"><p>{p.how_to_take}</p></div></details>}
             {p.ingredients && <details className="acc"><summary>Ingredients</summary><div className="in"><p>{p.ingredients}</p></div></details>}
             <details className="acc"><summary>Warnings</summary><div className="in"><p>{p.warnings || "Food supplements should not be used as a substitute for a varied, balanced diet and a healthy lifestyle. Do not exceed the recommended daily dose. If you are pregnant, breastfeeding or taking medication, speak to your GP or pharmacist first. Keep out of sight and reach of young children."}</p></div></details>
-            <details className="acc"><summary>Delivery & returns</summary><div className="in"><p>UK mainland {gbp(store.delivery.mainland)}{f.freeDelivery.on ? `, free over ${gbpShort(f.freeDelivery.threshold)}` : ""}. Highlands & Islands {gbp(store.delivery.highlands)}. Northern Ireland {gbp(store.delivery.ni)}. Unopened pots can be returned within 30 days.</p></div></details>
+            <details className="acc"><summary>Delivery & returns</summary><div className="in"><p>{zoneName(store.delivery, "mainland")} {gbp(store.delivery.mainland)}{f.freeDelivery.on ? `, free over ${gbpShort(f.freeDelivery.threshold)}` : ""}. {zoneName(store.delivery, "highlands")} {gbp(store.delivery.highlands)}. {zoneName(store.delivery, "ni")} {gbp(store.delivery.ni)}.{store.delivery.note ? ` ${store.delivery.note}` : ""} Unopened pots can be returned within 30 days.</p></div></details>
           </div>
         </div>
       </div>

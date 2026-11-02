@@ -47,3 +47,10 @@ export function shopHref(f: Record<string, string | undefined> = {}) {
   const qs = new URLSearchParams(Object.entries(f).filter((e): e is [string, string] => !!e[1])).toString();
   return `/shop${qs ? `?${qs}` : ""}`;
 }
+
+
+const ZONE_DEFAULT = { mainland: "UK mainland", highlands: "Highlands & Islands", ni: "Northern Ireland" } as const;
+/** The name of a delivery area as the team set it in Admin › Delivery. */
+export function zoneName(delivery: { labels?: { mainland: string; highlands: string; ni: string } } | null | undefined, zone: "mainland" | "highlands" | "ni"): string {
+  return delivery?.labels?.[zone]?.trim() || ZONE_DEFAULT[zone];
+}

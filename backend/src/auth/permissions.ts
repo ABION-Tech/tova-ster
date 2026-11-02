@@ -106,6 +106,7 @@ export const AREAS: Record<string, string> = {
   offers: "GET /admin/offers",
   emails: "PUT /admin/settings/:key",
   quiz: "PUT /admin/settings/:key",
+  delivery: "PUT /admin/settings/:key",
   activity: "GET /admin/activity",
   instagram: "GET /admin/instagram",
   team: "GET /admin/team",

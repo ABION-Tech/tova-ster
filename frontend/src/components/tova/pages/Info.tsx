@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useShop } from "../ShopProvider";
 import { BundleCard } from "../BundleCard";
 import { Loading } from "../Loading";
-import { gbp, gbpShort, hourLabel, multibuyTitle } from "../../../lib/tova/shop";
+import { gbp, gbpShort, hourLabel, multibuyTitle, zoneName } from "../../../lib/tova/shop";
 
 export function Offers() {
   const { store } = useShop();
@@ -33,7 +33,7 @@ export function Help() {
   return (
     <main className="wrap" style={{ maxWidth: 800 }}><h1 className="page-title">Help</h1>
       <div style={{ display: "grid", gap: 4, marginBottom: 48 }}>
-        <details className="acc" id="delivery" open><summary>Delivery</summary><div className="in"><p>UK mainland {gbp(d.mainland)}{f.freeDelivery.on ? `, free over ${gbpShort(f.freeDelivery.threshold)}` : ""}. Highlands & Islands {gbp(d.highlands)}. Northern Ireland {gbp(d.ni)}. Order before {hourLabel(d.cutoffHour)} on a working day and we send it the same day. We don&apos;t deliver to the Channel Islands or the Isle of Man yet.</p></div></details>
+        <details className="acc" id="delivery" open><summary>Delivery</summary><div className="in"><p>{zoneName(d, "mainland")} {gbp(d.mainland)}{f.freeDelivery.on ? `, free over ${gbpShort(f.freeDelivery.threshold)}` : ""}. {zoneName(d, "highlands")} {gbp(d.highlands)}. {zoneName(d, "ni")} {gbp(d.ni)}. Order before {hourLabel(d.cutoffHour)} on a working day and we send it the same day. We don&apos;t deliver to the Channel Islands or the Isle of Man yet.</p></div></details>
         <details className="acc" id="returns"><summary>Returns</summary><div className="in"><p>Unopened pots can be returned within 30 days for a full refund. Email {b.email} with your order number and we&apos;ll send you a returns label.</p></div></details>
         {f.subscribe.on && <details className="acc" id="subscriptions"><summary>Subscriptions</summary><div className="in"><p>Save {f.subscribe.discount}% on every delivery. Skip, pause or cancel any time from your account. We email you a reminder before each delivery.</p></div></details>}
         {f.rewards.on && <details className="acc" id="points"><summary>Reward points</summary><div className="in"><p>Earn {f.rewards.earn} points for every £1. 100 points take {gbp(f.rewards.pointValue)} off. Spend from {f.rewards.minRedeem} points. You get {f.rewards.signup} points when you create an account.</p></div></details>}

@@ -76,7 +76,7 @@ export interface StoreBundle {
 
 export interface Storefront {
   features: Features;
-  delivery: { mainland: number; highlands: number; ni: number; cutoffHour: number; vat: number };
+  delivery: { mainland: number; highlands: number; ni: number; cutoffHour: number; vat: number; labels?: { mainland: string; highlands: string; ni: string }; note?: string };
   business: { name: string; email: string; web: string; instagram: string; address: string; company: string; vatNo: string; vatRegistered: boolean };
   site: {
     hero: { slides: HeroSlide[]; autoplay: boolean; intervalSec: number };

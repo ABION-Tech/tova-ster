@@ -67,11 +67,12 @@ export function envDeliveryRates(): DeliveryRates {
     mainland: envNumber("DELIVERY_FEE_MAINLAND", 3.99),
     highlands: envNumber("DELIVERY_FEE_HIGHLANDS", 7.99),
     ni: envNumber("DELIVERY_FEE_NI", 5.99),
-    threshold: envNumber("FREE_DELIVERY_THRESHOLD", 40),
+    // No free delivery unless it is switched on (Growth tools) or set here on purpose.
+    threshold: process.env.FREE_DELIVERY_THRESHOLD ? envNumber("FREE_DELIVERY_THRESHOLD", 0) : null,
   };
 }
 
-/** Free delivery over the threshold applies to every zone, matching "Free UK delivery over £40". */
+/** Free delivery over the threshold (only when switched on) applies to every zone. */
 export function computeDelivery(postcode: string, basketTotal: number, rates: DeliveryRates = envDeliveryRates()): DeliveryQuote {
   const zone = deliveryZone(postcode);
   const threshold = rates.threshold ?? Infinity;

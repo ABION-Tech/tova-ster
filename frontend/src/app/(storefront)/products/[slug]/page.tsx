@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const image = p.images[0]?.url;
   return {
     title: p.name,
-    description: `${p.short_description ?? p.name}. £${p.price.toFixed(2)}, free UK delivery over £40.`,
+    description: `${p.short_description ?? p.name}. £${p.price.toFixed(2)}, delivered across the UK.`,
     alternates: { canonical: `/products/${p.slug}` },
     openGraph: { title: p.name, description: p.short_description ?? undefined, images: image ? [image] : undefined },
   };

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useShop } from "./ShopProvider";
 import { ProductArt } from "./ProductArt";
-import { freqLabel, gbp, round2 } from "../../lib/tova/shop";
+import { freqLabel, gbp, round2, zoneName } from "../../lib/tova/shop";
 import type { Cart, CartLine, CartPricing } from "../../lib/tova/types";
 
 /** Bundle lines travel together, so they're shown (and changed) as one row. */
@@ -99,15 +99,15 @@ export function BasketLine({ row, compact }: { row: BasketRow; compact?: boolean
   );
 }
 
-const ZONE = { mainland: "UK mainland", highlands: "Highlands & Islands", ni: "Northern Ireland" } as const;
 
 /** The money breakdown. Every figure comes from the server's pricing engine. */
 export function Summary({ p, vatRate, rewardsOn, showLines }: { p: CartPricing; vatRate: number; rewardsOn: boolean; showLines?: boolean }) {
+  const { store } = useShop();
   return (
     <div className="sum num">
       {showLines !== false && <div><span>Items</span><span>{gbp(p.full)}</span></div>}
       {p.discounts.map((d) => <div className="save" key={d.type + d.label}><span>{d.label}</span><span>−{gbp(d.amount)}</span></div>)}
-      <div><span>Delivery{p.deliveryIsEstimate ? "" : `, ${ZONE[p.deliveryZone]}`}</span><span>{p.delivery === 0 ? "Free" : gbp(p.delivery)}</span></div>
+      <div><span>Delivery{p.deliveryIsEstimate ? "" : `, ${zoneName(store?.delivery, p.deliveryZone)}`}</span><span>{p.delivery === 0 ? "Free" : gbp(p.delivery)}</span></div>
       <div className="tot"><span>Total</span><span>{gbp(p.total)}</span></div>
       {p.saved > 0 && <div className="save"><span>You&apos;re saving</span><span>{gbp(p.saved)}</span></div>}
       {rewardsOn && <div style={{ color: "var(--gold-ink)", fontWeight: 600 }}><span>Points you&apos;ll earn</span><span>{p.pointsEarned}</span></div>}

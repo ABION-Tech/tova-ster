@@ -6,8 +6,9 @@ export interface Media { src: string; kind: "image" | "video" }
 const img = (src: string): Media => ({ src, kind: "image" });
 
 export const DEFAULT_FEATURES = {
-  announcement: { on: true, messages: ["Free UK delivery on orders over £40", "Subscribe & save 15% on every order", "3 for 2 across the whole range"] },
-  freeDelivery: { on: true, threshold: 40 },
+  announcement: { on: true, messages: ["Delivered across the UK", "Subscribe & save 15% on every order", "3 for 2 across the whole range"] },
+  // Off by default: free delivery costs the business the postage on every order over the threshold.
+  freeDelivery: { on: false, threshold: 40 },
   subscribe: { on: true, discount: 15, freqs: [1, 2, 3] },
   multibuy: { on: true, mode: "3for2" as "3for2" | "2save10" | "3save20" },
   bundles: { on: true },
@@ -37,7 +38,13 @@ export const DEFAULT_FEATURES = {
   },
 };
 
-export const DEFAULT_DELIVERY = { mainland: 3.99, highlands: 7.99, ni: 5.99, cutoffHour: 14, vat: 20 };
+export const DEFAULT_DELIVERY = {
+  mainland: 3.99, highlands: 7.99, ni: 5.99, cutoffHour: 14, vat: 20,
+  // What each delivery area is called in the shop, basket, checkout and Help page.
+  labels: { mainland: "UK mainland", highlands: "Highlands & Islands", ni: "Northern Ireland" },
+  // One line shown with the prices on product pages and the Help page.
+  note: "Order before the cut-off on a working day and we send it the same day.",
+};
 
 export const DEFAULT_BUSINESS = {
   name: "Tova-Ster Ltd",

@@ -247,8 +247,8 @@ export default function GrowthAdmin() {
           <div className="frow"><span>The guide</span><a className="btn ghost sm" href={F.freebie.fileUrl} target="_blank" rel="noopener">Open the PDF</a></div>
         </Feat>
 
-        <Feat k="freeDelivery" title="Free delivery bar" desc="Shows how close the basket is to free delivery." on={F.freeDelivery.on} onToggle={(on) => set("freeDelivery", { on })}
-          impact={g?.avgOrder != null ? <>Average order is <b>{gbp(g.avgOrder)}</b> ({g.orders7} orders, 7 days). A threshold a little above it encourages one more item.</> : "No paid orders in the last 7 days yet."}>
+        <Feat k="freeDelivery" title="Free delivery" desc="Free delivery over an amount you choose, with a bar in the basket. Off unless you switch it on: you pay the postage on those orders." on={F.freeDelivery.on} onToggle={(on) => set("freeDelivery", { on })}
+          impact={g?.avgOrder != null ? <>Average order is <b>{gbp(g.avgOrder)}</b> ({g.orders7} orders, 7 days). A threshold a little above it encourages one more item. Prices by area are in <Link href="/admin/delivery">Delivery</Link>.</> : <>No paid orders in the last 7 days yet. Prices by area are in <Link href="/admin/delivery">Delivery</Link>.</>}>
           <Num id="fd-t" label="Free delivery from (£)" value={F.freeDelivery.threshold} max={500} onChange={(threshold) => set("freeDelivery", { threshold })} />
         </Feat>
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Shop, type ShopFilters } from "../../../components/tova/pages/Shop";
 
-export const metadata: Metadata = { title: "Shop vitamins, minerals and gummies", description: "The Tova-Ster range: Vitamin D3 4000iu, Iron & Vitamin C, Collagen Complex, Multivitamin and Mineral for Children, and Creatine Monohydrate. Free UK delivery over £40." };
+export const metadata: Metadata = { title: "Shop vitamins, minerals and gummies", description: "The Tova-Ster range: Vitamin D3 4000iu, Iron & Vitamin C, Collagen Complex, Multivitamin and Mineral for Children, and Creatine Monohydrate, delivered across the UK." };
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;

@@ -7,7 +7,7 @@ import { BasketLine, Summary, basketRows } from "../BasketLines";
 import { Loading } from "../Loading";
 import { api, cartApi, orderApi } from "../../../lib/tova/api";
 import { memory } from "../../../lib/tova/memory";
-import { gbp } from "../../../lib/tova/shop";
+import { gbp, zoneName } from "../../../lib/tova/shop";
 import { PayMarks } from "../PayMarks";
 
 interface Draft { email: string; first: string; last: string; phone: string; line1: string; line2: string; city: string; postcode: string; note: string }
@@ -110,7 +110,7 @@ export function Checkout({ cancelled }: { cancelled: boolean }) {
           </div>
           {pcErr ? <div className="notice warn">{pcErr}</div> : (
             <div className={`notice ${p.delivery === 0 ? "good" : "gold"}`}>
-              {p.deliveryIsEstimate ? "Delivery, UK mainland (enter your postcode to confirm)" : { mainland: "UK mainland", highlands: "Highlands & Islands", ni: "Northern Ireland" }[p.deliveryZone]}: {p.delivery === 0 ? "free delivery" : gbp(p.delivery)}
+              {p.deliveryIsEstimate ? `Delivery, ${zoneName(store.delivery, "mainland")} (enter your postcode to confirm)` : zoneName(store.delivery, p.deliveryZone)}: {p.delivery === 0 ? "free delivery" : gbp(p.delivery)}
             </div>
           )}
           <h2>Payment</h2>
