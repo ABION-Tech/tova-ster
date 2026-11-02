@@ -1,22 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * The main web address (tova-ster.com) before launch.
+ * The main web address (tova-ster.co.uk) before launch.
  *
- * MAIN_HOSTS     the shop's public addresses (default tova-ster.com, www.tova-ster.com)
+ * MAIN_HOSTS     the shop's public addresses (default tova-ster.co.uk, www.tova-ster.co.uk)
  * SITE_OPEN      "true" opens the full shop there (launch day). Until then
  *                visitors see the launching-soon page and can join the email list.
  * CHECKOUT_OPEN  "true" lets visitors on the main address check out. Until then
  *                (while payments are in test mode) checkout there shows "orders
  *                open soon" with the email sign-up, so nobody can place a test order.
- * PREVIEW_KEY    tova-ster.com/?preview=<key> lets the team and client into the
+ * PREVIEW_KEY    tova-ster.co.uk/?preview=<key> lets the team and client into the
  *                full shop on the main address (remembered for 30 days).
  *
  * Every other address (preview.tova-ster.com, the Railway address) always has
  * the full shop, but is kept out of search engines so Google only ever lists
- * tova-ster.com. www is sent to the plain address.
+ * tova-ster.co.uk. www is sent to the plain address.
  */
-const MAIN = (process.env.MAIN_HOSTS ?? "tova-ster.com,www.tova-ster.com").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+const MAIN = (process.env.MAIN_HOSTS ?? "tova-ster.co.uk,www.tova-ster.co.uk").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
 const OPEN = process.env.SITE_OPEN === "true";
 const KEY = process.env.PREVIEW_KEY ?? "";
 const COOKIE = "tova_preview";

@@ -27,7 +27,7 @@ import { announcePaid } from "../payments/afterPaid.js";
 
 const MAX_TRIES = 3;
 const RETRY_DAYS = 2;
-const appUrl = () => (process.env.APP_URL ?? "https://tova-ster.com").replace(/\/$/, "");
+const appUrl = () => (process.env.APP_URL ?? "https://tova-ster.co.uk").replace(/\/$/, "");
 
 type DueSub = {
   id: string; user_id: string | null; email: string; product_id: string | null; product_name: string; quantity: number;

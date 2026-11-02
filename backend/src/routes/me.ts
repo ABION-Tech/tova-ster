@@ -155,7 +155,7 @@ export const meRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
       [e],
     );
     await pool.query(`UPDATE users SET unsubscribed_at = NULL WHERE lower(email) = $1`, [e]);
-    const appUrl = (process.env.APP_URL ?? "https://tova-ster.com").replace(/\/$/, "");
+    const appUrl = (process.env.APP_URL ?? "https://tova-ster.co.uk").replace(/\/$/, "");
     const link = /^https:\/\//.test(f.freebie.fileUrl) ? f.freebie.fileUrl : `${appUrl}${f.freebie.fileUrl}`;
     const code = f.freebie.giveCode && f.welcome.on ? f.welcome.code : null;
     emailService.send({ to: e, subject: "Your free Tova-Ster guide", template: "freebie", data: { link, title: f.freebie.title, code, pct: f.welcome.pct } })

@@ -43,12 +43,12 @@ const trim = (u: string) => u.replace(/\/$/, "");
 
 /** Page the shopper sees (asks them to confirm; link scanners can't unsubscribe anyone by opening it). */
 export function unsubscribePageUrl(email: string): string {
-  return `${trim(process.env.APP_URL ?? "https://tova-ster.com")}/unsubscribe?t=${unsubscribeToken(email)}`;
+  return `${trim(process.env.APP_URL ?? "https://tova-ster.co.uk")}/unsubscribe?t=${unsubscribeToken(email)}`;
 }
 
 /** Address mail apps POST to for their own "Unsubscribe" button (RFC 8058). */
 export function oneClickUrl(email: string): string {
-  const api = process.env.API_URL ?? process.env.APP_URL ?? "https://tova-ster.com";
+  const api = process.env.API_URL ?? process.env.APP_URL ?? "https://tova-ster.co.uk";
   return `${trim(api)}/unsubscribe/one-click?t=${unsubscribeToken(email)}`;
 }
 

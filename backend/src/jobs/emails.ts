@@ -16,7 +16,7 @@ import { quoteSubscriptions } from "../subscriptions/renewals.js";
  * go to everyone they concern.
  */
 
-const appUrl = () => (process.env.APP_URL ?? "https://tova-ster.com").replace(/\/$/, "");
+const appUrl = () => (process.env.APP_URL ?? "https://tova-ster.co.uk").replace(/\/$/, "");
 const DAY = 24 * 60 * 60 * 1000;
 
 /** People who agreed to marketing emails (account tick box or newsletter) and haven't unsubscribed. */

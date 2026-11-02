@@ -1098,7 +1098,7 @@ function seedData() {
 }
 
 /* ───────────────────────── State (saved in this browser only) ───────────────────────── */
-const KEY = "tovaster-demo-v5"; // v5: free delivery off by default. v3: five-product range, hero carousel, free guide, Instagram page
+const KEY = "tovaster-demo-v6"; // v5: free delivery off by default. v3: five-product range, hero carousel, free guide, Instagram page
 function fresh() {
   const seeded = seedData();
   return {
@@ -1352,12 +1352,12 @@ function footer() {
   const pay = S.settings.payments;
   return `<footer class="site"><div class="wrap">
     <div class="fcols">
-      <div style="display:grid;gap:14px;align-content:start"><button class="logo" data-go="home" style="color:#fff"><img src="assets/monogram.png" alt=""><b style="color:#fff">TOVA-STER</b></button><p style="font-size:14px;max-width:30em">Wellness for your whole self. Vitamins, minerals and gummies for adults, children and training, delivered across the UK.</p><p style="font-size:14px">info@tova-ster.com<br>tova-ster.com</p>${S.site.insta.on ? `<button data-go="instagram" style="color:#fff;font-weight:600;font-size:14px;background:none;border:0;padding:0;text-align:left;cursor:pointer">Instagram @${esc(S.site.insta.handle)}</button>` : ""}${paymarks()}</div>
+      <div style="display:grid;gap:14px;align-content:start"><button class="logo" data-go="home" style="color:#fff"><img src="assets/monogram.png" alt=""><b style="color:#fff">TOVA-STER</b></button><p style="font-size:14px;max-width:30em">Wellness for your whole self. Vitamins, minerals and gummies for adults, children and training, delivered across the UK.</p><p style="font-size:14px">info@tova-ster.com<br>tova-ster.co.uk</p>${S.site.insta.on ? `<button data-go="instagram" style="color:#fff;font-weight:600;font-size:14px;background:none;border:0;padding:0;text-align:left;cursor:pointer">Instagram @${esc(S.site.insta.handle)}</button>` : ""}${paymarks()}</div>
       <div><h4>Shop</h4><ul>${NEEDS.slice(0, 5).map(n => `<li><button data-go="shop:need=${n.id}">${n.name}</button></li>`).join("")}<li><button data-go="shop:">Shop all</button></li></ul></div>
       <div><h4>Help</h4><ul><li><button data-go="help">Delivery & returns</button></li><li><button data-go="help">Subscriptions</button></li>${S.settings.rewards.on ? `<li><button data-go="account">Reward points</button></li>` : ""}<li><button data-go="help">Contact us</button></li><li><button data-go="help">FAQs</button></li></ul></div>
       <div><h4>Company</h4><ul><li><button data-go="help">Our story</button></li><li><button data-go="help">Quality & safety</button></li><li><button data-go="help">Privacy & cookies</button></li><li><button data-go="help">Terms</button></li></ul></div>
     </div>
-    <div class="legal"><span>Food supplements should not be used as a substitute for a varied, balanced diet and a healthy lifestyle. Do not exceed the recommended daily dose.</span><span>© 2026 Tova-Ster, tova-ster.com</span></div>
+    <div class="legal"><span>Food supplements should not be used as a substitute for a varied, balanced diet and a healthy lifestyle. Do not exceed the recommended daily dose.</span><span>© 2026 Tova-Ster, tova-ster.co.uk</span></div>
   </div></footer>`;
 }
 
@@ -1973,7 +1973,7 @@ function instaStrip() {
 function instaPage() {
   const si = S.site.insta, posts = igPosts();
   return `<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><button data-go="home">Home</button><span>/</span><span>Instagram</span></nav>
-    <section class="igprof"><div class="av"><span><img src="assets/monogram.png" alt=""></span></div><div><h1>@${esc(si.handle)} <a class="btn sm" href="${esc(si.url)}" target="_blank" rel="noopener">Follow on Instagram</a></h1><div class="stats"><span><b>${posts.length}</b> posts</span></div><p>Tova-Ster: wellness for your whole self. New products, how-tos and offers, first on Instagram. Shop everything you see at tova-ster.com.</p></div></section>
+    <section class="igprof"><div class="av"><span><img src="assets/monogram.png" alt=""></span></div><div><h1>@${esc(si.handle)} <a class="btn sm" href="${esc(si.url)}" target="_blank" rel="noopener">Follow on Instagram</a></h1><div class="stats"><span><b>${posts.length}</b> posts</span></div><p>Tova-Ster: wellness for your whole self. New products, how-tos and offers, first on Instagram. Shop everything you see at tova-ster.co.uk.</p></div></section>
     <div class="iggal">${posts.map(igTile).join("")}</div>
     ${S.igConnected ? "" : `<p class="sub" style="font-size:13px;color:var(--ink-3);margin:8px 0">Demo: showing the pictures chosen in the admin. Connect Instagram in the admin to see the live feed.</p>`}
     <div style="height:40px"></div></main>`;
@@ -2951,7 +2951,7 @@ setInterval(() => {
   S.fbOpen = true; S.fbShownThisVisit = true; render(true);
 }, 1000);
 setInterval(() => { const el = document.getElementById("livenow"); if (el && !document.hidden) el.textContent = liveCount(); }, 6000);
-S.settings.business = S.settings.business || { name: "Tova-Ster Ltd", address: "Registered address to confirm, United Kingdom", company: "Company no. to confirm", vatNo: "GB VAT no. to confirm", email: "info@tova-ster.com", web: "tova-ster.com", footer: "Thank you for shopping with Tova-Ster. Questions about your order? Email info@tova-ster.com." };
+S.settings.business = S.settings.business || { name: "Tova-Ster Ltd", address: "Registered address to confirm, United Kingdom", company: "Company no. to confirm", vatNo: "GB VAT no. to confirm", email: "info@tova-ster.com", web: "tova-ster.co.uk", footer: "Thank you for shopping with Tova-Ster. Questions about your order? Email info@tova-ster.com." };
 S.settings.dispatch = S.settings.dispatch || { autoLabel: true, batchOn: true, batchTime: 13, scanDispatch: true, trackingEmail: true, deliveredEmail: true, reviewEmail: true, holdOn: true, holdOver: 120, autoHideOOS: true, subsAuto: true, subsDays: 3, partner: false, carriers: { mainland: "Royal Mail Tracked 48", highlands: "Royal Mail Tracked 48", ni: "DPD Next Day" } };
 S.orders.forEach(o => { if (!o.ful) o.ful = initFul(o); if (!o.discounts) o.discounts = o.discount ? [{ label: "Discounts", amount: o.discount }] : []; });
 S.myOrders.forEach(o => { const twin = S.orders.find(x => x.id === o.id); if (twin) Object.assign(o, twin); });

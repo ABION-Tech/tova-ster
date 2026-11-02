@@ -53,7 +53,7 @@ export const DEFAULT_BUSINESS = {
   vatNo: "GB VAT no. to confirm",
   vatRegistered: true,
   email: "info@tova-ster.com",
-  web: "tova-ster.com",
+  web: "tova-ster.co.uk",
   footer: "Thank you for shopping with Tova-Ster. Questions about your order? Email info@tova-ster.com.",
   instagram: "tovaster1",
   retentionMonths: 26,

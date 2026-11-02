@@ -65,7 +65,7 @@ function InstagramAdmin() {
           <ol style={{ lineHeight: 1.7 }}>
             <li>In the Instagram app: Settings → Account type and tools → switch @tovaster1 to a <b>Business</b> or <b>Creator</b> account (free).</li>
             <li>At developers.facebook.com, create an app (type: <b>Business</b>) and add the <b>Instagram</b> product, choosing <b>API setup with Instagram business login</b>.</li>
-            <li>Under Business login settings, add this redirect URL: <code>https://api.tova-ster.com/instagram/oauth/callback</code> (your Railway backend address).</li>
+            <li>Under Business login settings, add this redirect URL: <code>https://api.tova-ster.co.uk/instagram/oauth/callback</code> (your Railway backend address).</li>
             <li>Copy the <b>Instagram app ID</b> and <b>Instagram app secret</b> into Railway as INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET, and set INSTAGRAM_REDIRECT_URI to the same redirect URL.</li>
             <li>Come back here and press <b>Connect Instagram</b>, then log in as @tovaster1 and approve.</li>
           </ol>

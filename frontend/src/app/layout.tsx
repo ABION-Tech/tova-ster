@@ -1,7 +1,7 @@
 import "../styles/tova.css";
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tova-ster.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tova-ster.co.uk"),
   title: { default: "Tova-Ster: UK vitamins, minerals and gummies", template: "%s | Tova-Ster" },
   description: "Tova-Ster is a UK supplement brand: everyday vitamins, minerals and gummies for adults, children and training, delivered across the UK.",
   icons: { icon: "/brand/monogram.png" },

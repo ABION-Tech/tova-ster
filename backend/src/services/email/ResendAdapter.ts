@@ -122,7 +122,7 @@ function shell(title: string, body: string, unsubscribeUrl?: string): string {
       ${body}
     </div>
     <div style="padding:20px 32px;background:#F3EEE3;text-align:center;font-size:12px;color:${BRAND_MUTED};">
-      © ${new Date().getFullYear()} Tova-Ster · tova-ster.com · info@tova-ster.com
+      © ${new Date().getFullYear()} Tova-Ster · tova-ster.co.uk · info@tova-ster.com
       ${unsubscribeUrl ? `<br><a href="${esc(unsubscribeUrl)}" style="color:${BRAND_MUTED};text-decoration:underline;">Unsubscribe from marketing emails</a>` : ""}
     </div>
   </div>
@@ -150,7 +150,7 @@ function str(data: Record<string, unknown>, key: string, fallback = ""): string 
 
 function adminNewOrderEmail(data: Record<string, unknown>): string {
   const items = (data.items as { name: string; qty: number }[] | undefined) ?? [];
-  const adminUrl = `${process.env.APP_URL ?? "https://tova-ster.com"}/admin/orders`;
+  const adminUrl = `${process.env.APP_URL ?? "https://tova-ster.co.uk"}/admin/orders`;
   return shell(
     `New order ${str(data, "orderNumber")}`,
     `<h1 style="font-size:20px;margin:0 0 8px;">New order ${esc(data.orderNumber)}</h1>
@@ -163,7 +163,7 @@ function adminNewOrderEmail(data: Record<string, unknown>): string {
 
 function adminLowStockEmail(data: Record<string, unknown>): string {
   const items = (data.items as { name: string; stock: number; threshold: number }[] | undefined) ?? [];
-  const adminUrl = `${process.env.APP_URL ?? "https://tova-ster.com"}/admin/products`;
+  const adminUrl = `${process.env.APP_URL ?? "https://tova-ster.co.uk"}/admin/products`;
   return shell(
     "Low stock",
     `<h1 style="font-size:20px;margin:0 0 8px;">Low stock</h1>
@@ -177,7 +177,7 @@ function birthdayEmail(data: Record<string, unknown>): string {
   const name = str(data, "firstName");
   const points = Number(data.points) || 0;
   const pounds = Number(data.pounds) || 0;
-  const appUrl = process.env.APP_URL ?? "https://tova-ster.com";
+  const appUrl = process.env.APP_URL ?? "https://tova-ster.co.uk";
   return shell(
     "Happy birthday from Tova-Ster",
     `<h1 style="font-size:22px;margin:0 0 8px;">Happy birthday${name ? `, ${esc(name)}` : ""}!</h1>
@@ -198,7 +198,7 @@ function freebieEmail(data: Record<string, unknown>): string {
     `<h1 style="font-size:22px;margin:0 0 16px;">Here's your free guide</h1>
      <p style="color:${BRAND_MUTED};line-height:1.6;margin:0 0 8px;">${esc(str(data, "title"))}. Tap the button to download it. The link keeps working, so you can come back to it.</p>
      <div style="text-align:center;">${btn(link, "Download the guide")}</div>
-     ${code ? `<p style="line-height:1.6;margin:8px 0 0;">As a thank you, use <b style="color:${BRAND_GOLD};">${esc(code)}</b> for ${esc(pct)}% off your first order at tova-ster.com.</p>` : ""}
+     ${code ? `<p style="line-height:1.6;margin:8px 0 0;">As a thank you, use <b style="color:${BRAND_GOLD};">${esc(code)}</b> for ${esc(pct)}% off your first order at tova-ster.co.uk.</p>` : ""}
      <p style="color:${BRAND_MUTED};font-size:12px;margin-top:24px;">You're getting this because you asked for the guide and agreed to hear from us. You can unsubscribe at any time using the link below.</p>`,
     str(data, "unsubscribeUrl") || undefined,
   );
