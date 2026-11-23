@@ -982,3 +982,57 @@ fieldset.bday legend { font-size: 14px; font-weight: 600; padding: 0; margin-bot
 .soon-foot span { margin-left: auto; }
 @media (max-width: 600px) { .soon-foot span { margin-left: 0; width: 100%; } }
 .soon-back { margin: 22px 0 0; }
+
+/* ── Breathing room (23 Nov 2026) ─────────────────────────────────
+   Storefront only: more space between and inside sections so pages read
+   less crowded. Admin screens are not affected. Undo by deleting this block. */
+:root { --gutter: 32px; }
+.sec { padding-top: 112px; }
+.sec-head { margin-bottom: 40px; gap: 28px; }
+.sec-head p { margin-top: 10px; max-width: 46em; }
+.hero { padding-top: 28px; }
+.hero-copy { padding: 80px 64px; gap: 26px; }
+.trust { gap: 16px; margin-top: 24px; }
+.trust div { padding: 20px 22px; }
+.needs { gap: 18px; }
+.need { padding: 22px; }
+.grid { column-gap: 28px; row-gap: 48px; }
+.grid .card { gap: 12px; }
+.bundles, .perks { gap: 28px; }
+.bundle { padding: 28px; gap: 18px; }
+.perk { padding: 48px; gap: 20px; }
+.perk ul { gap: 12px; }
+.band { padding: 64px; gap: 56px; }
+.news { padding: 56px 64px; gap: 48px; }
+.freebie { padding: 40px; gap: 44px; }
+.fcols { gap: 48px; }
+.fcols ul { gap: 12px; }
+footer.site { margin-top: 112px; }
+.page-title { padding: 40px 0 28px; }
+.crumbs { padding: 28px 0 12px; }
+.shop-layout { gap: 48px; }
+.filters { gap: 32px; }
+.pdp { gap: 72px; padding-top: 16px; }
+.benefits { gap: 12px; }
+.opts { gap: 14px; }
+.opt { padding: 18px 20px; }
+.fbt { padding: 36px; gap: 32px; }
+.reviews { gap: 56px; }
+.quiz { gap: 36px; padding-top: 56px; }
+.drawer .body { gap: 24px; padding: 24px 26px; }
+@media (max-width: 860px) {
+  :root { --gutter: 20px; }
+  .sec { padding-top: 72px; }
+  .sec-head { margin-bottom: 28px; }
+  .hero-copy { padding: 44px 28px 36px; }
+  .grid, .grid.three { column-gap: 16px; row-gap: 36px; }
+  .band, .perk, .news, .freebie { padding: 36px 26px; }
+  .band, .news { gap: 28px; }
+  .pdp { gap: 36px; }
+  .reviews { gap: 32px; }
+  footer.site { margin-top: 80px; }
+}
+@media (max-width: 520px) {
+  .sec { padding-top: 60px; }
+  .trust div { padding: 14px; }
+}

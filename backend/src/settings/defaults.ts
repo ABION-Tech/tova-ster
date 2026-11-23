@@ -9,7 +9,9 @@ export const DEFAULT_FEATURES = {
   announcement: { on: true, messages: ["Delivered across the UK", "Subscribe & save 15% on every order", "3 for 2 across the whole range"] },
   // Off by default: free delivery costs the business the postage on every order over the threshold.
   freeDelivery: { on: false, threshold: 40 },
-  subscribe: { on: true, discount: 15, freqs: [1, 2, 3] },
+  // Off by default: the team switches it on in Growth. Announcement lines that
+  // mention subscribing stay hidden until then.
+  subscribe: { on: false, discount: 15, freqs: [1, 2, 3] },
   multibuy: { on: true, mode: "3for2" as "3for2" | "2save10" | "3save20" },
   bundles: { on: true },
   rewards: { on: true, earn: 5, pointValue: 1, signup: 100, minRedeem: 500 },

@@ -178,7 +178,7 @@ export default function GrowthAdmin() {
       {err && <div className="notice warn" role="alert">{err}</div>}
 
       <div className="features">
-        <Feat k="subscribe" title="Subscribe & Save" desc="Repeat deliveries at a discount, charged to the saved card each time." on={F.subscribe.on} onToggle={(on) => set("subscribe", { on })}
+        <Feat k="subscribe" title="Subscribe & Save" desc="Repeat deliveries at a discount, charged to the saved card each time. Off unless you switch it on; announcement lines about subscribing show only while it is on." on={F.subscribe.on} onToggle={(on) => set("subscribe", { on })}
           impact={g && <><b>{g.subscriptions.active} active</b> subscriptions, about <b>{gbp(g.subscriptions.perMonth)}</b> a month.</>}>
           <Num id="sub-d" label="Discount (%)" value={F.subscribe.discount} min={0} max={50} onChange={(discount) => set("subscribe", { discount })} />
           <div className="frow"><span>Frequencies offered</span>
@@ -252,7 +252,7 @@ export default function GrowthAdmin() {
           <Num id="fd-t" label="Free delivery from (£)" value={F.freeDelivery.threshold} max={500} onChange={(threshold) => set("freeDelivery", { threshold })} />
         </Feat>
 
-        <Feat k="announcement" title="Announcement bar" desc="The rotating line at the top of every page." on={F.announcement.on} onToggle={(on) => set("announcement", { on })}>
+        <Feat k="announcement" title="Announcement bar" desc={F.subscribe.on ? "The rotating line at the top of every page." : "The rotating line at the top of every page. Lines about subscribing are hidden while Subscribe & Save is off."} on={F.announcement.on} onToggle={(on) => set("announcement", { on })}>
           {messages.map((m, i) => (
             <div className="frow" key={i}>
               <input className="ain wide" style={{ flex: 1, minWidth: 0 }} aria-label={`Message ${i + 1}`} maxLength={90} value={m}
