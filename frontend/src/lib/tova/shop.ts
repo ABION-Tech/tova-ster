@@ -54,3 +54,7 @@ const ZONE_DEFAULT = { mainland: "UK mainland", highlands: "Highlands & Islands"
 export function zoneName(delivery: { labels?: { mainland: string; highlands: string; ni: string } } | null | undefined, zone: "mainland" | "highlands" | "ni"): string {
   return delivery?.labels?.[zone]?.trim() || ZONE_DEFAULT[zone];
 }
+
+// Announcement lines about Subscribe & Save only show while it is switched on.
+export const announcementLines = (f: Features) =>
+  f.announcement.messages.filter((m) => m.trim() && (f.subscribe.on || !/subscri/i.test(m)));

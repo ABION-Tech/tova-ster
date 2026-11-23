@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useShop } from "./ShopProvider";
 import { Icon } from "./Icons";
 import { ProductArt } from "./ProductArt";
-import { FORMATS, NEEDS, WHO, gbp, shopHref } from "../../lib/tova/shop";
+import { FORMATS, NEEDS, WHO, announcementLines, gbp, shopHref } from "../../lib/tova/shop";
 import { memory } from "../../lib/tova/memory";
 
 function Announcement({ messages }: { messages: string[] }) {
@@ -83,9 +83,10 @@ export function Header() {
   if (!store) return null;
   const f = store.features;
   const count = cart?.pricing.itemCount ?? 0;
+  const lines = announcementLines(f);
   return (
     <>
-      {f.announcement.on && f.announcement.messages.length > 0 && <Announcement messages={f.announcement.messages} />}
+      {f.announcement.on && lines.length > 0 && <Announcement messages={lines} />}
       <header className="hdr"><div className="wrap">
         <button className="icon-btn burger" onClick={() => setMenu(true)} aria-label="Open menu"><Icon.menu /></button>
         <Link className="logo" href="/" aria-label="Tova-Ster home">
